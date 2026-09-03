@@ -70,32 +70,15 @@ export const defaultStyle: NameStyle = {
   showSize: true,
   sizeScale: 0.55,
   sizeGapPct: 3,
+  showPhone: false,
+  showNumber: false,
 };
-
-function drawTracked(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  y: number,
-  tracking: number,
-  stroke: boolean,
-) {
-  const chars = [...text];
-  const widths = chars.map((c) => ctx.measureText(c).width);
-  const total = widths.reduce((a, b) => a + b, 0) + tracking * Math.max(0, chars.length - 1);
-  let x = cx - total / 2;
-  chars.forEach((c, i) => {
-    if (stroke) ctx.strokeText(c, x, y);
-    ctx.fillText(c, x, y);
-    x += widths[i]! + tracking;
-  });
-}
-
+...
 /** Renders the artwork + personalised name onto a canvas at the given output width. */
 export function renderShirt(
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
-  row: { name: string; size: string },
+  row: { name: string; size: string; phone?: string; number?: string },
   s: NameStyle,
   outputWidth: number,
 ) {
@@ -110,13 +93,21 @@ export function renderShirt(
   ctx.clearRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
 
-  const name = s.uppercase ? row.name.toUpperCase() : row.name;
-  if (!name.trim() && !s.showSize) return;
+  const applyCase = (v: string) => (s.uppercase ? v.toUpperCase() : v);
+  const name = applyCase(row.name);
 
   const fontPx = (s.sizePct / 100) * w;
   const cx = (s.xPct / 100) * w;
   const cy = (s.yPct / 100) * h;
   const tracking = (s.letterSpacingPct / 100) * fontPx;
+
+  // Extra lines under the name, in order: number, size, phone
+  const extras: string[] = [];
+  if (s.showNumber && row.number?.trim()) extras.push(applyCase(row.number.trim()));
+  if (s.showSize && row.size) extras.push(sizeLabel(row.size));
+  if (s.showPhone && row.phone?.trim()) extras.push(row.phone.trim());
+
+  if (!name.trim() && !extras.length) return;
 
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
@@ -128,12 +119,14 @@ export function renderShirt(
   ctx.lineWidth = (s.outlineWidth / 100) * fontPx * 2;
   drawTracked(ctx, name, cx, cy, tracking, s.outlineWidth > 0);
 
-  if (s.showSize && row.size) {
+  let y = cy + fontPx / 2;
+  for (const line of extras) {
     const sizePx = fontPx * s.sizeScale;
     ctx.font = `${s.weight} ${sizePx}px ${s.fontFamily}, sans-serif`;
     ctx.lineWidth = (s.outlineWidth / 100) * sizePx * 2;
-    const y = cy + fontPx / 2 + sizePx / 2 + (s.sizeGapPct / 100) * fontPx;
-    drawTracked(ctx, row.size, cx, y, (s.letterSpacingPct / 100) * sizePx, s.outlineWidth > 0);
+    y += sizePx / 2 + (s.sizeGapPct / 100) * fontPx;
+    drawTracked(ctx, line, cx, y, (s.letterSpacingPct / 100) * sizePx, s.outlineWidth > 0);
+    y += sizePx / 2;
   }
 }
 
