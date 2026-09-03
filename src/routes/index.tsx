@@ -94,20 +94,27 @@ function Index() {
     };
   }, []);
 
-  const loadFile = useCallback((file: File) => {
+  const loadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Please choose an image file (PNG or JPG).");
       return;
     }
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
+    try {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(new Error("read failed"));
+        fr.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
       setImg(image);
-      setImgSrc(url);
-      toast.success(`Artwork loaded — ${image.naturalWidth}×${image.naturalHeight}px`);
-    };
-    image.onerror = () => toast.error("That image could not be read.");
-    image.src = url;
+      setImgSrc(dataUrl);
+      toast.success(`Artwork loaded — ${image.naturalWidth}x${image.naturalHeight}px`);
+    } catch {
+      toast.error("That image could not be read.");
+    }
   }, []);
 
   useEffect(() => {
@@ -117,7 +124,7 @@ function Index() {
     const drop = (e: DragEvent) => {
       e.preventDefault();
       const f = e.dataTransfer?.files?.[0];
-      if (f) loadFile(f);
+      if (f) void loadFile(f);
     };
     el.addEventListener("dragover", over);
     el.addEventListener("drop", drop);
@@ -277,7 +284,10 @@ function Index() {
                     type="file"
                     accept="image/*"
                     className="sr-only"
-                    onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void loadFile(f);
+                    }}
                   />
                   <span className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-input bg-secondary px-3 text-sm font-medium hover:bg-muted">
                     <ImagePlus className="size-4" />
