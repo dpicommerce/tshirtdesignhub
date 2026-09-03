@@ -59,7 +59,7 @@ function Index() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<PersonRow[]>(starterRows);
-  const [activeId, setActiveId] = useState<string>(starterRows[0].id);
+  const [activeId, setActiveId] = useState<string>(starterRows[0]!.id);
   const [style, setStyle] = useState<NameStyle>(defaultStyle);
   const [outWidth, setOutWidth] = useState(2500);
   const [bulk, setBulk] = useState("");
@@ -69,7 +69,7 @@ function Index() {
   const dropRef = useRef<HTMLDivElement>(null);
 
   const active = useMemo(
-    () => rows.find((r) => r.id === activeId) ?? rows[0],
+    () => rows.find((r) => r.id === activeId) ?? rows[0]!,
     [rows, activeId],
   );
 
@@ -164,7 +164,7 @@ function Index() {
       return;
     }
     setRows(parsed);
-    setActiveId(parsed[0].id);
+    setActiveId(parsed[0]!.id);
     setBulk("");
     toast.success(`Imported ${parsed.length} people`);
   };
@@ -206,7 +206,7 @@ function Index() {
     try {
       const zip = new JSZip();
       for (let i = 0; i < valid.length; i++) {
-        const r = valid[i];
+        const r = valid[i]!;
         const blob = await renderBlob(r);
         const folder = zip.folder(r.size) ?? zip;
         folder.file(
@@ -582,7 +582,7 @@ function SliderRow({
         min={min}
         max={max}
         step={step}
-        onValueChange={([v]) => onChange(v)}
+        onValueChange={([v]) => onChange(v!)}
       />
     </div>
   );

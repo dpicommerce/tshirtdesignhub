@@ -67,7 +67,7 @@ function drawTracked(
   chars.forEach((c, i) => {
     if (stroke) ctx.strokeText(c, x, y);
     ctx.fillText(c, x, y);
-    x += widths[i] + tracking;
+    x += widths[i]! + tracking;
   });
 }
 
