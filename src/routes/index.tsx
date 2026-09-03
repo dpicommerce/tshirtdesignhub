@@ -21,6 +21,7 @@ import {
   FONT_OPTIONS,
   SIZES,
   defaultStyle,
+  sizeLabel,
   renderShirt,
   slug,
   type NameStyle,
@@ -50,9 +51,9 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 const starterRows: PersonRow[] = [
-  { id: uid(), name: "Alex Carter", size: "M", qty: 1 },
-  { id: uid(), name: "Priya Nair", size: "S", qty: 1 },
-  { id: uid(), name: "Jordan Blake", size: "XL", qty: 2 },
+  { id: uid(), name: "Alex Carter", phone: "98765 43210", number: "10", size: "M", qty: 1 },
+  { id: uid(), name: "Priya Nair", phone: "", number: "7", size: "S", qty: 1 },
+  { id: uid(), name: "Jordan Blake", phone: "91234 56780", number: "", size: "XL", qty: 2 },
 ];
 
 function Index() {
@@ -144,7 +145,7 @@ function Index() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   const addRow = () => {
-    const r = { id: uid(), name: "", size: "M", qty: 1 };
+    const r = { id: uid(), name: "", phone: "", number: "", size: "M", qty: 1 };
     setRows((rs) => [...rs, r]);
     setActiveId(r.id);
   };
@@ -162,12 +163,14 @@ function Index() {
         return {
           id: uid(),
           name: parts[0] ?? "",
-          size: (parts[1] || "M").toUpperCase(),
-          qty: Number(parts[2]) > 0 ? Number(parts[2]) : 1,
+          number: parts[1] ?? "",
+          phone: parts[2] ?? "",
+          size: (parts[3] || "M").toUpperCase(),
+          qty: Number(parts[4]) > 0 ? Number(parts[4]) : 1,
         };
       });
     if (!parsed.length) {
-      toast.error("Nothing to import — add lines like: Alex Carter, L, 1");
+      toast.error("Nothing to import — add lines like: Alex Carter, 10, 9876543210, L, 1");
       return;
     }
     setRows(parsed);
