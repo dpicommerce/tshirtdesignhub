@@ -1,6 +1,8 @@
 export type PersonRow = {
   id: string;
   name: string;
+  phone: string;
+  number: string;
   size: string;
   qty: number;
 };
@@ -19,9 +21,27 @@ export type NameStyle = {
   showSize: boolean;
   sizeScale: number; // size text relative to name
   sizeGapPct: number;
+  showPhone: boolean;
+  showNumber: boolean;
 };
 
+// Size label → chest measurement shown in the size pickers
 export const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"] as const;
+
+export const SIZE_VALUES: Record<(typeof SIZES)[number], string> = {
+  XS: '32–34"',
+  S: '34–36"',
+  M: '38–40"',
+  L: '40–42"',
+  XL: '42–44"',
+  "2XL": '46–48"',
+  "3XL": '50–52"',
+};
+
+export const sizeLabel = (s: string) =>
+  s in SIZE_VALUES
+    ? `${s} (${SIZE_VALUES[s as keyof typeof SIZE_VALUES]})`
+    : s;
 
 export const FONT_OPTIONS = [
   { label: "Anton", value: "Anton" },
