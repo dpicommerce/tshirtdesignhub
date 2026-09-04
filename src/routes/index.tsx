@@ -334,11 +334,13 @@ function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[680px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
                     <th className="px-2 pb-1">Name on shirt</th>
+                    <th className="px-2 pb-1">Number</th>
+                    <th className="px-2 pb-1">Phone</th>
                     <th className="px-2 pb-1">Size</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
@@ -361,14 +363,31 @@ function Index() {
                         />
                       </td>
                       <td className="px-2 py-1">
+                        <Input
+                          type="number"
+                          value={r.number}
+                          placeholder="#"
+                          onChange={(e) => update(r.id, { number: e.target.value })}
+                          className="h-9 w-[70px]"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          value={r.phone}
+                          placeholder="Phone"
+                          onChange={(e) => update(r.id, { phone: e.target.value })}
+                          className="h-9 w-[110px]"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
                         <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
-                          <SelectTrigger className="h-9 w-[86px]">
+                          <SelectTrigger className="h-9 w-[110px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {SIZES.map((s) => (
                               <SelectItem key={s} value={s}>
-                                {s}
+                                {sizeLabel(s)}
                               </SelectItem>
                             ))}
                           </SelectContent>
