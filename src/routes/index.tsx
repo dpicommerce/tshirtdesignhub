@@ -424,13 +424,13 @@ function Index() {
             </div>
 
             <div className="mt-4 grid gap-2">
-              <Label htmlFor="bulk">Paste a list (Name, Size, Qty — one per line)</Label>
+              <Label htmlFor="bulk">Paste a list (Name, Number, Phone, Size, Qty — one per line)</Label>
               <Textarea
                 id="bulk"
                 rows={3}
                 value={bulk}
                 onChange={(e) => setBulk(e.target.value)}
-                placeholder={"Alex Carter, L, 1\nPriya Nair, S, 2"}
+                placeholder={"Alex Carter, 10, 9876543210, L, 1\nPriya Nair, 7, , S, 2"}
               />
               <Button variant="secondary" className="justify-self-start" onClick={importBulk}>
                 Replace table with list
@@ -547,6 +547,24 @@ function Index() {
                 id="showsize"
                 checked={style.showSize}
                 onCheckedChange={(v) => setStyle({ ...style, showSize: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2">
+              <Label htmlFor="shownumber">Print number on shirt</Label>
+              <Switch
+                id="shownumber"
+                checked={style.showNumber}
+                onCheckedChange={(v) => setStyle({ ...style, showNumber: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2">
+              <Label htmlFor="showphone">Print phone on shirt</Label>
+              <Switch
+                id="showphone"
+                checked={style.showPhone}
+                onCheckedChange={(v) => setStyle({ ...style, showPhone: v })}
               />
             </div>
 
