@@ -7,25 +7,48 @@ export type PersonRow = {
   qty: number;
 };
 
-export type NameStyle = {
-  fontFamily: string;
-  weight: number;
-  colorHex: string;
-  outlineHex: string;
-  outlineWidth: number;
-  sizePct: number; // % of image width
-  xPct: number;
-  yPct: number;
-  letterSpacingPct: number;
-  uppercase: boolean;
-  showSize: boolean;
-  sizeScale: number; // size text relative to name
-  sizeGapPct: number;
-  showPhone: boolean;
-  showNumber: boolean;
+export type LayerKey = "name" | "number" | "size" | "phone";
+
+export const LAYER_KEYS: LayerKey[] = ["name", "number", "size", "phone"];
+
+export const LAYER_LABELS: Record<LayerKey, string> = {
+  name: "Name",
+  number: "Number",
+  size: "Size",
+  phone: "Phone",
 };
 
-// Size label → chest measurement shown in the size pickers
+export type FillMode = "solid" | "gradient";
+export type TextEffect = "none" | "shadow" | "glow" | "extrude" | "emboss";
+
+export type LayerStyle = {
+  enabled: boolean;
+  fontFamily: string;
+  weight: number;
+  uppercase: boolean;
+  /** font size as % of image width */
+  sizePct: number;
+  xPct: number;
+  yPct: number;
+  rotation: number;
+  /** total arc sweep in degrees; 0 = flat */
+  curve: number;
+  letterSpacingPct: number;
+  fill: FillMode;
+  colorHex: string;
+  gradFrom: string;
+  gradTo: string;
+  gradAngle: number;
+  outlineHex: string;
+  outlineWidth: number;
+  effect: TextEffect;
+  effectHex: string;
+  effectStrength: number;
+  opacity: number;
+};
+
+export type DesignStyle = Record<LayerKey, LayerStyle>;
+
 export const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"] as const;
 
 export const SIZE_VALUES: Record<(typeof SIZES)[number], string> = {
@@ -39,11 +62,11 @@ export const SIZE_VALUES: Record<(typeof SIZES)[number], string> = {
 };
 
 export const sizeLabel = (s: string) =>
-  s in SIZE_VALUES
-    ? `${s} (${SIZE_VALUES[s as keyof typeof SIZE_VALUES]})`
-    : s;
+  s in SIZE_VALUES ? `${s} (${SIZE_VALUES[s as keyof typeof SIZE_VALUES]})` : s;
 
-export const FONT_OPTIONS = [
+export type FontOption = { label: string; value: string; custom?: boolean };
+
+export const FONT_OPTIONS: FontOption[] = [
   { label: "Anton", value: "Anton" },
   { label: "Bebas Neue", value: "'Bebas Neue'" },
   { label: "Oswald", value: "Oswald" },
@@ -54,56 +77,275 @@ export const FONT_OPTIONS = [
   { label: "Pacifico", value: "Pacifico" },
   { label: "Caveat", value: "Caveat" },
   { label: "Barlow Condensed", value: "'Barlow Condensed'" },
+  { label: "Bungee", value: "Bungee" },
+  { label: "Monoton", value: "Monoton" },
+  { label: "Righteous", value: "Righteous" },
+  { label: "Alfa Slab One", value: "'Alfa Slab One'" },
+  { label: "Black Ops One", value: "'Black Ops One'" },
+  { label: "Press Start 2P", value: "'Press Start 2P'" },
+  { label: "Lobster", value: "Lobster" },
+  { label: "Great Vibes", value: "'Great Vibes'" },
+  { label: "Permanent Marker", value: "'Permanent Marker'" },
+  { label: "Staatliches", value: "Staatliches" },
+  { label: "Russo One", value: "'Russo One'" },
+  { label: "Orbitron", value: "Orbitron" },
+  { label: "Faster One", value: "'Faster One'" },
+  { label: "Creepster", value: "Creepster" },
 ];
 
-export const defaultStyle: NameStyle = {
+const baseLayer: LayerStyle = {
+  enabled: true,
   fontFamily: "Anton",
   weight: 400,
-  colorHex: "#ffffff",
-  outlineHex: "#111111",
-  outlineWidth: 0,
+  uppercase: true,
   sizePct: 9,
   xPct: 50,
   yPct: 62,
+  rotation: 0,
+  curve: 0,
   letterSpacingPct: 2,
-  uppercase: true,
-  showSize: true,
-  sizeScale: 0.55,
-  sizeGapPct: 3,
-  showPhone: false,
-  showNumber: false,
+  fill: "solid",
+  colorHex: "#ffffff",
+  gradFrom: "#fbbf24",
+  gradTo: "#ef4444",
+  gradAngle: 90,
+  outlineHex: "#111111",
+  outlineWidth: 0,
+  effect: "none",
+  effectHex: "#000000",
+  effectStrength: 3,
+  opacity: 100,
 };
 
-function drawTracked(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  tracking: number,
-  stroke: boolean,
-) {
-  const { width } = ctx.measureText(text);
-  const totalWidth = width + Math.max(0, text.length - 1) * tracking;
-  let curX = x - totalWidth / 2;
-  for (const ch of text) {
-    const chWidth = ctx.measureText(ch).width;
-    if (stroke) ctx.strokeText(ch, curX, y);
-    ctx.fillText(ch, curX, y);
-    curX += chWidth + tracking;
-  }
+export const defaultStyle: DesignStyle = {
+  name: { ...baseLayer },
+  number: { ...baseLayer, enabled: false, sizePct: 14, yPct: 40 },
+  size: { ...baseLayer, sizePct: 4.5, yPct: 71 },
+  phone: { ...baseLayer, enabled: false, sizePct: 3.5, yPct: 78, uppercase: false },
+};
+
+/** Presets for quick advanced looks. */
+export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
+  {
+    label: "Clean white",
+    patch: { fill: "solid", colorHex: "#ffffff", outlineWidth: 0, effect: "none" },
+  },
+  {
+    label: "Sunset gradient",
+    patch: {
+      fill: "gradient",
+      gradFrom: "#fde047",
+      gradTo: "#f43f5e",
+      gradAngle: 90,
+      outlineWidth: 0,
+      effect: "none",
+    },
+  },
+  {
+    label: "Chrome",
+    patch: {
+      fill: "gradient",
+      gradFrom: "#f8fafc",
+      gradTo: "#64748b",
+      gradAngle: 90,
+      outlineHex: "#0f172a",
+      outlineWidth: 1.5,
+      effect: "emboss",
+      effectHex: "#ffffff",
+      effectStrength: 2,
+    },
+  },
+  {
+    label: "Varsity outline",
+    patch: {
+      fill: "solid",
+      colorHex: "#111111",
+      outlineHex: "#ffffff",
+      outlineWidth: 3,
+      effect: "extrude",
+      effectHex: "#ef4444",
+      effectStrength: 4,
+    },
+  },
+  {
+    label: "Neon glow",
+    patch: {
+      fill: "solid",
+      colorHex: "#f0fdfa",
+      outlineWidth: 0,
+      effect: "glow",
+      effectHex: "#22d3ee",
+      effectStrength: 8,
+    },
+  },
+  {
+    label: "3D pop",
+    patch: {
+      fill: "gradient",
+      gradFrom: "#ffffff",
+      gradTo: "#cbd5e1",
+      gradAngle: 90,
+      outlineHex: "#0f172a",
+      outlineWidth: 2,
+      effect: "extrude",
+      effectHex: "#0f172a",
+      effectStrength: 6,
+    },
+  },
+  {
+    label: "Arched team",
+    patch: { curve: 40, letterSpacingPct: 4, outlineWidth: 2, outlineHex: "#000000" },
+  },
+];
+
+export function layerText(key: LayerKey, row: PersonRow, l: LayerStyle): string {
+  const raw =
+    key === "name"
+      ? row.name
+      : key === "number"
+        ? row.number
+        : key === "size"
+          ? sizeLabel(row.size)
+          : row.phone;
+  const t = (raw ?? "").trim();
+  return l.uppercase ? t.toUpperCase() : t;
 }
 
-/** Renders the artwork + personalised name onto a canvas at the given output width. */
+function measureTracked(ctx: CanvasRenderingContext2D, text: string, tracking: number) {
+  let total = 0;
+  for (const ch of text) total += ctx.measureText(ch).width + tracking;
+  return total - tracking;
+}
+
+function paintChars(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  tracking: number,
+  total: number,
+  curveDeg: number,
+  fontPx: number,
+  stroke: boolean,
+) {
+  if (Math.abs(curveDeg) < 0.5) {
+    let x = -total / 2;
+    for (const ch of text) {
+      const cw = ctx.measureText(ch).width;
+      if (stroke) ctx.strokeText(ch, x, 0);
+      ctx.fillText(ch, x, 0);
+      x += cw + tracking;
+    }
+    return;
+  }
+  const sweep = (Math.abs(curveDeg) * Math.PI) / 180;
+  const radius = total / sweep;
+  const up = curveDeg > 0; // arch upward
+  let angle = -sweep / 2;
+  for (const ch of text) {
+    const cw = ctx.measureText(ch).width;
+    const step = (cw + tracking) / radius;
+    ctx.save();
+    if (up) {
+      ctx.translate(0, radius);
+      ctx.rotate(angle + step / 2);
+      ctx.translate(0, -radius);
+    } else {
+      ctx.translate(0, -radius);
+      ctx.rotate(-(angle + step / 2));
+      ctx.translate(0, radius);
+    }
+    if (stroke) ctx.strokeText(ch, -cw / 2, 0);
+    ctx.fillText(ch, -cw / 2, 0);
+    ctx.restore();
+    angle += step;
+  }
+  void fontPx;
+}
+
+function drawLayer(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  l: LayerStyle,
+  w: number,
+  h: number,
+) {
+  if (!text) return;
+  const fontPx = (l.sizePct / 100) * w;
+  const font = `${l.weight} ${fontPx}px ${l.fontFamily}, sans-serif`;
+  ctx.save();
+  ctx.font = font;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.miterLimit = 2;
+  ctx.globalAlpha = Math.max(0, Math.min(1, l.opacity / 100));
+
+  const tracking = (l.letterSpacingPct / 100) * fontPx;
+  const total = measureTracked(ctx, text, tracking);
+
+  ctx.translate((l.xPct / 100) * w, (l.yPct / 100) * h);
+  if (l.rotation) ctx.rotate((l.rotation * Math.PI) / 180);
+
+  const strokeW = (l.outlineWidth / 100) * fontPx * 2;
+  ctx.lineWidth = strokeW;
+  ctx.strokeStyle = l.outlineHex;
+
+  const unit = fontPx / 100;
+
+  // --- effects painted behind the main glyphs ---
+  if (l.effect === "extrude") {
+    const depth = Math.max(1, Math.round(l.effectStrength * 3));
+    ctx.fillStyle = l.effectHex;
+    for (let i = depth; i >= 1; i--) {
+      ctx.save();
+      ctx.translate(i * unit, i * unit);
+      paintChars(ctx, text, tracking, total, l.curve, fontPx, false);
+      ctx.restore();
+    }
+  } else if (l.effect === "emboss") {
+    ctx.fillStyle = l.effectHex;
+    ctx.save();
+    ctx.translate(-l.effectStrength * unit, -l.effectStrength * unit);
+    paintChars(ctx, text, tracking, total, l.curve, fontPx, false);
+    ctx.restore();
+  }
+
+  if (l.effect === "shadow") {
+    ctx.shadowColor = l.effectHex;
+    ctx.shadowBlur = l.effectStrength * unit * 2;
+    ctx.shadowOffsetX = l.effectStrength * unit;
+    ctx.shadowOffsetY = l.effectStrength * unit;
+  } else if (l.effect === "glow") {
+    ctx.shadowColor = l.effectHex;
+    ctx.shadowBlur = l.effectStrength * unit * 4;
+  }
+
+  if (l.fill === "gradient") {
+    const a = (l.gradAngle * Math.PI) / 180;
+    const rx = (Math.cos(a) * total) / 2;
+    const ry = (Math.sin(a) * fontPx) / 2;
+    const g = ctx.createLinearGradient(-rx, -ry, rx, ry);
+    g.addColorStop(0, l.gradFrom);
+    g.addColorStop(1, l.gradTo);
+    ctx.fillStyle = g;
+  } else {
+    ctx.fillStyle = l.colorHex;
+  }
+
+  paintChars(ctx, text, tracking, total, l.curve, fontPx, strokeW > 0);
+  ctx.restore();
+}
+
+/** Renders the artwork + all personalised text layers at the given output width. */
 export function renderShirt(
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
-  row: { name: string; size: string; phone?: string; number?: string },
-  s: NameStyle,
+  row: PersonRow,
+  style: DesignStyle,
   outputWidth: number,
 ) {
   const ratio = img.naturalHeight / img.naturalWidth;
-  const w = Math.round(outputWidth);
-  const h = Math.round(outputWidth * ratio);
+  const w = Math.max(1, Math.round(outputWidth));
+  const h = Math.max(1, Math.round(outputWidth * ratio));
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
@@ -112,40 +354,10 @@ export function renderShirt(
   ctx.clearRect(0, 0, w, h);
   ctx.drawImage(img, 0, 0, w, h);
 
-  const applyCase = (v: string) => (s.uppercase ? v.toUpperCase() : v);
-  const name = applyCase(row.name);
-
-  const fontPx = (s.sizePct / 100) * w;
-  const cx = (s.xPct / 100) * w;
-  const cy = (s.yPct / 100) * h;
-  const tracking = (s.letterSpacingPct / 100) * fontPx;
-
-  // Extra lines under the name, in order: number, size, phone
-  const extras: string[] = [];
-  if (s.showNumber && row.number?.trim()) extras.push(applyCase(row.number.trim()));
-  if (s.showSize && row.size) extras.push(sizeLabel(row.size));
-  if (s.showPhone && row.phone?.trim()) extras.push(row.phone.trim());
-
-  if (!name.trim() && !extras.length) return;
-
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = s.colorHex;
-  ctx.strokeStyle = s.outlineHex;
-  ctx.lineJoin = "round";
-
-  ctx.font = `${s.weight} ${fontPx}px ${s.fontFamily}, sans-serif`;
-  ctx.lineWidth = (s.outlineWidth / 100) * fontPx * 2;
-  drawTracked(ctx, name, cx, cy, tracking, s.outlineWidth > 0);
-
-  let y = cy + fontPx / 2;
-  for (const line of extras) {
-    const sizePx = fontPx * s.sizeScale;
-    ctx.font = `${s.weight} ${sizePx}px ${s.fontFamily}, sans-serif`;
-    ctx.lineWidth = (s.outlineWidth / 100) * sizePx * 2;
-    y += sizePx / 2 + (s.sizeGapPct / 100) * fontPx;
-    drawTracked(ctx, line, cx, y, (s.letterSpacingPct / 100) * sizePx, s.outlineWidth > 0);
-    y += sizePx / 2;
+  for (const key of LAYER_KEYS) {
+    const l = style[key];
+    if (!l.enabled) continue;
+    drawLayer(ctx, layerText(key, row, l), l, w, h);
   }
 }
 
