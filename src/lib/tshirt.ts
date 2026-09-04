@@ -73,7 +73,26 @@ export const defaultStyle: NameStyle = {
   showPhone: false,
   showNumber: false,
 };
-...
+
+function drawTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  tracking: number,
+  stroke: boolean,
+) {
+  const { width } = ctx.measureText(text);
+  const totalWidth = width + Math.max(0, text.length - 1) * tracking;
+  let curX = x - totalWidth / 2;
+  for (const ch of text) {
+    const chWidth = ctx.measureText(ch).width;
+    if (stroke) ctx.strokeText(ch, curX, y);
+    ctx.fillText(ch, curX, y);
+    curX += chWidth + tracking;
+  }
+}
+
 /** Renders the artwork + personalised name onto a canvas at the given output width. */
 export function renderShirt(
   canvas: HTMLCanvasElement,
