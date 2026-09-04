@@ -236,18 +236,24 @@ function paintChars(
     }
     return;
   }
-  const sweep = (curveDeg * Math.PI) / 180;
-  const radius = total / Math.abs(sweep);
-  const dir = curveDeg > 0 ? -1 : 1; // positive = arch upward
+  const sweep = (Math.abs(curveDeg) * Math.PI) / 180;
+  const radius = total / sweep;
+  const up = curveDeg > 0; // arch upward
   let angle = -sweep / 2;
   for (const ch of text) {
     const cw = ctx.measureText(ch).width;
     const step = (cw + tracking) / radius;
     ctx.save();
-    ctx.rotate(angle + step / 2);
-    ctx.translate(0, dir * radius);
-    ctx.rotate(dir === -1 ? 0 : Math.PI);
-    if (stroke) ctx.strokeText(ch, -cw / 2, dir === -1 ? -radius + radius : 0);
+    if (up) {
+      ctx.translate(0, radius);
+      ctx.rotate(angle + step / 2);
+      ctx.translate(0, -radius);
+    } else {
+      ctx.translate(0, -radius);
+      ctx.rotate(-(angle + step / 2));
+      ctx.translate(0, radius);
+    }
+    if (stroke) ctx.strokeText(ch, -cw / 2, 0);
     ctx.fillText(ch, -cw / 2, 0);
     ctx.restore();
     angle += step;
