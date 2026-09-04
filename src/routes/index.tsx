@@ -334,11 +334,13 @@ function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[680px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
                     <th className="px-2 pb-1">Name on shirt</th>
+                    <th className="px-2 pb-1">Number</th>
+                    <th className="px-2 pb-1">Phone</th>
                     <th className="px-2 pb-1">Size</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
@@ -361,14 +363,31 @@ function Index() {
                         />
                       </td>
                       <td className="px-2 py-1">
+                        <Input
+                          type="number"
+                          value={r.number}
+                          placeholder="#"
+                          onChange={(e) => update(r.id, { number: e.target.value })}
+                          className="h-9 w-[70px]"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <Input
+                          value={r.phone}
+                          placeholder="Phone"
+                          onChange={(e) => update(r.id, { phone: e.target.value })}
+                          className="h-9 w-[110px]"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
                         <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
-                          <SelectTrigger className="h-9 w-[86px]">
+                          <SelectTrigger className="h-9 w-[110px]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             {SIZES.map((s) => (
                               <SelectItem key={s} value={s}>
-                                {s}
+                                {sizeLabel(s)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -405,13 +424,13 @@ function Index() {
             </div>
 
             <div className="mt-4 grid gap-2">
-              <Label htmlFor="bulk">Paste a list (Name, Size, Qty — one per line)</Label>
+              <Label htmlFor="bulk">Paste a list (Name, Number, Phone, Size, Qty — one per line)</Label>
               <Textarea
                 id="bulk"
                 rows={3}
                 value={bulk}
                 onChange={(e) => setBulk(e.target.value)}
-                placeholder={"Alex Carter, L, 1\nPriya Nair, S, 2"}
+                placeholder={"Alex Carter, 10, 9876543210, L, 1\nPriya Nair, 7, , S, 2"}
               />
               <Button variant="secondary" className="justify-self-start" onClick={importBulk}>
                 Replace table with list
@@ -528,6 +547,24 @@ function Index() {
                 id="showsize"
                 checked={style.showSize}
                 onCheckedChange={(v) => setStyle({ ...style, showSize: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2">
+              <Label htmlFor="shownumber">Print number on shirt</Label>
+              <Switch
+                id="shownumber"
+                checked={style.showNumber}
+                onCheckedChange={(v) => setStyle({ ...style, showNumber: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-md bg-secondary px-3 py-2">
+              <Label htmlFor="showphone">Print phone on shirt</Label>
+              <Switch
+                id="showphone"
+                checked={style.showPhone}
+                onCheckedChange={(v) => setStyle({ ...style, showPhone: v })}
               />
             </div>
 
