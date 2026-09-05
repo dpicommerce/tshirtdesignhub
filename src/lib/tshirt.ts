@@ -49,20 +49,46 @@ export type LayerStyle = {
 
 export type DesignStyle = Record<LayerKey, LayerStyle>;
 
-export const SIZES = ["XS", "S", "M", "L", "XL", "2XL", "3XL"] as const;
+export type SizeSpec = { size: string; w: number; h: number };
 
-export const SIZE_VALUES: Record<(typeof SIZES)[number], string> = {
-  XS: '32–34"',
-  S: '34–36"',
-  M: '38–40"',
-  L: '40–42"',
-  XL: '42–44"',
-  "2XL": '46–48"',
-  "3XL": '50–52"',
+/** Print sheet chart (inches). Default artwork sheet is 22 x 32" at 200 DPI. */
+export const DEFAULT_SIZE_CHART: SizeSpec[] = [
+  { size: "18", w: 12, h: 17 },
+  { size: "20", w: 12, h: 18 },
+  { size: "22", w: 13, h: 19 },
+  { size: "24", w: 14, h: 21 },
+  { size: "26", w: 15, h: 22 },
+  { size: "28", w: 16, h: 24 },
+  { size: "30", w: 17, h: 25 },
+  { size: "32", w: 18, h: 26 },
+  { size: "34", w: 19, h: 29 },
+  { size: "(S)36", w: 20, h: 31 },
+  { size: "(M)38", w: 21, h: 31 },
+  { size: "(L)40", w: 22, h: 32 },
+  { size: "(XL)42", w: 23, h: 32 },
+  { size: "(XXL)44", w: 24, h: 32 },
+  { size: "(XXXL)46", w: 25, h: 32 },
+  { size: "(XXXXL)48", w: 26, h: 32 },
+  { size: "50", w: 27, h: 32 },
+  { size: "52", w: 28, h: 32 },
+  { size: "54", w: 29, h: 32 },
+  { size: "56", w: 30, h: 32 },
+];
+
+export const BASE_SIZE: SizeSpec = { size: "(L)40", w: 22, h: 32 };
+export const BASE_DPI = 200;
+export const MAX_DPI = 300;
+
+export const SIZES = DEFAULT_SIZE_CHART.map((s) => s.size);
+
+export const findSize = (chart: SizeSpec[], size: string): SizeSpec =>
+  chart.find((s) => s.size === size) ?? BASE_SIZE;
+
+export const sizeLabel = (s: string, chart: SizeSpec[] = DEFAULT_SIZE_CHART) => {
+  const spec = chart.find((x) => x.size === s);
+  return spec ? `${spec.size} — ${spec.w}×${spec.h}"` : s;
 };
 
-export const sizeLabel = (s: string) =>
-  s in SIZE_VALUES ? `${s} (${SIZE_VALUES[s as keyof typeof SIZE_VALUES]})` : s;
 
 export type FontOption = { label: string; value: string; custom?: boolean };
 
@@ -342,17 +368,23 @@ export function renderShirt(
   row: PersonRow,
   style: DesignStyle,
   outputWidth: number,
+  outputHeight?: number,
 ) {
   const ratio = img.naturalHeight / img.naturalWidth;
   const w = Math.max(1, Math.round(outputWidth));
-  const h = Math.max(1, Math.round(outputWidth * ratio));
+  const h = Math.max(1, Math.round(outputHeight ?? outputWidth * ratio));
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.clearRect(0, 0, w, h);
-  ctx.drawImage(img, 0, 0, w, h);
+
+  // fit artwork inside the sheet, preserving its aspect ratio
+  const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * scale;
+  const dh = img.naturalHeight * scale;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
 
   for (const key of LAYER_KEYS) {
     const l = style[key];
@@ -360,6 +392,13 @@ export function renderShirt(
     drawLayer(ctx, layerText(key, row, l), l, w, h);
   }
 }
+
+/** Pixel dimensions of a print sheet for a given size + DPI (capped at MAX_DPI). */
+export function sheetPixels(spec: SizeSpec, dpi: number) {
+  const d = Math.min(MAX_DPI, Math.max(72, Math.round(dpi)));
+  return { w: Math.round(spec.w * d), h: Math.round(spec.h * d), dpi: d };
+}
+
 
 export function slug(v: string) {
   return (
