@@ -368,17 +368,23 @@ export function renderShirt(
   row: PersonRow,
   style: DesignStyle,
   outputWidth: number,
+  outputHeight?: number,
 ) {
   const ratio = img.naturalHeight / img.naturalWidth;
   const w = Math.max(1, Math.round(outputWidth));
-  const h = Math.max(1, Math.round(outputWidth * ratio));
+  const h = Math.max(1, Math.round(outputHeight ?? outputWidth * ratio));
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.clearRect(0, 0, w, h);
-  ctx.drawImage(img, 0, 0, w, h);
+
+  // fit artwork inside the sheet, preserving its aspect ratio
+  const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
+  const dw = img.naturalWidth * scale;
+  const dh = img.naturalHeight * scale;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
 
   for (const key of LAYER_KEYS) {
     const l = style[key];
@@ -386,6 +392,13 @@ export function renderShirt(
     drawLayer(ctx, layerText(key, row, l), l, w, h);
   }
 }
+
+/** Pixel dimensions of a print sheet for a given size + DPI (capped at MAX_DPI). */
+export function sheetPixels(spec: SizeSpec, dpi: number) {
+  const d = Math.min(MAX_DPI, Math.max(72, Math.round(dpi)));
+  return { w: Math.round(spec.w * d), h: Math.round(spec.h * d), dpi: d };
+}
+
 
 export function slug(v: string) {
   return (
