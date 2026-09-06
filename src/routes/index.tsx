@@ -88,7 +88,9 @@ function Index() {
   const [layer, setLayer] = useState<LayerKey>("name");
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
+  const [textScale, setTextScale] = useState(100);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
+
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
