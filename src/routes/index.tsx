@@ -764,9 +764,71 @@ function Index() {
             </div>
 
             <div>
-              <Label>Size — {L.sizePct.toFixed(1)}%</Label>
-              {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 30, 0.5)}
+              <div className="flex items-center justify-between gap-2">
+                <Label>Text size</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => patch({ sizePct: Math.max(1, +(L.sizePct - 0.5).toFixed(1)) })}
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={40}
+                    step={0.5}
+                    value={L.sizePct}
+                    onChange={(e) =>
+                      patch({
+                        sizePct: Math.min(40, Math.max(1, Number(e.target.value) || L.sizePct)),
+                      })
+                    }
+                    className="h-7 w-20"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => patch({ sizePct: Math.min(40, +(L.sizePct + 0.5).toFixed(1)) })}
+                  >
+                    <Plus className="size-3" />
+                  </Button>
+                </div>
+              </div>
+              {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 40, 0.5)}
             </div>
+
+            <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label>All text size — {textScale}%</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => setTextScale((v) => Math.max(20, v - 5))}
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => setTextScale((v) => Math.min(300, v + 5))}
+                  >
+                    <Plus className="size-3" />
+                  </Button>
+                </div>
+              </div>
+              {num(textScale, setTextScale, 20, 300, 5)}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Scales every line at once. Text keeps the same position on every shirt size.
+              </p>
+            </div>
+
             <div>
               <Label>Horizontal — {L.xPct.toFixed(0)}%</Label>
               {num(L.xPct, (n) => patch({ xPct: n }), 0, 100, 0.5)}
