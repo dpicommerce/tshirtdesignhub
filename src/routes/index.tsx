@@ -167,8 +167,9 @@ function Index() {
     if (!img || !previewRef.current || !active) return;
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
-    renderShirt(previewRef.current, img, active, style, 1000, Math.round(1000 * ratio));
-  }, [img, active, style, chart, fontsReady]);
+    renderShirt(previewRef.current, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100);
+  }, [img, active, style, chart, textScale, fontsReady]);
+
 
   const update = (id: string, p: Partial<PersonRow>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...p } : r)));
