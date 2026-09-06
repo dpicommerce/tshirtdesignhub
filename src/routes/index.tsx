@@ -3,8 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileSpreadsheet,
+  Grid3x3,
   ImagePlus,
   Loader2,
   Minus,
@@ -91,6 +94,7 @@ function Index() {
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
   const [textScale, setTextScale] = useState(100);
+  const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
 
   const [bulk, setBulk] = useState("");
@@ -164,13 +168,52 @@ function Index() {
     };
   }, [loadFile]);
 
-  // Live preview at base sheet proportions
+  // Live preview at base sheet proportions, with optional inch grid overlay
   useEffect(() => {
     if (!img || !previewRef.current || !active) return;
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
-    renderShirt(previewRef.current, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100);
-  }, [img, active, style, chart, textScale, fontsReady]);
+    const canvas = previewRef.current;
+    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100);
+    if (!showGrid) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const xStep = canvas.width / spec.w;
+    const yStep = canvas.height / spec.h;
+    ctx.save();
+    for (let i = 0; i <= spec.w; i++) {
+      const x = Math.round(i * xStep) + 0.5;
+      ctx.strokeStyle = i % 5 === 0 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let j = 0; j <= spec.h; j++) {
+      const y = Math.round(j * yStep) + 0.5;
+      ctx.strokeStyle = j % 5 === 0 ? "rgba(255,255,255,0.45)" : "rgba(255,255,255,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    // inch rulers: label every 5"
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = `${Math.max(14, canvas.width * 0.014)}px monospace`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    for (let i = 5; i < spec.w; i += 5) ctx.fillText(`${i}"`, i * xStep + 4, 4);
+    for (let j = 5; j < spec.h; j += 5) ctx.fillText(`${j}"`, 4, j * yStep + 4);
+    ctx.restore();
+  }, [img, active, style, chart, textScale, fontsReady, showGrid]);
+
+  const stepRow = (dir: 1 | -1) => {
+    const idx = rows.findIndex((r) => r.id === active?.id);
+    const next = rows[(idx + dir + rows.length) % rows.length];
+    if (next) setActiveId(next.id);
+  };
 
 
   const update = (id: string, p: Partial<PersonRow>) =>
