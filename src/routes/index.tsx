@@ -3,8 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileSpreadsheet,
+  Grid3x3,
   ImagePlus,
   Loader2,
   Minus,
@@ -91,6 +94,7 @@ function Index() {
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
   const [textScale, setTextScale] = useState(100);
+  const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
 
   const [bulk, setBulk] = useState("");
