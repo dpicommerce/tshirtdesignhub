@@ -252,7 +252,7 @@ function Index() {
         return;
       }
       setChart(next);
-      if (res > 0) setDpi(Math.min(MAX_DPI, res));
+      if (res > 0) setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, res)));
       toast.success(`Size chart loaded — ${next.length} sizes`);
     } catch {
       toast.error("That spreadsheet could not be read.");
@@ -380,8 +380,8 @@ function Index() {
         );
       }
       const out = await zip.generateAsync({ type: "blob" });
-      download(out, `tshirt-prints-${dpi}dpi.zip`);
-      toast.success(`Exported ${valid.length} sheets at ${dpi} DPI`);
+      download(out, `tshirt-prints-${sheetPixels(BASE_SIZE, dpi).dpi}dpi.zip`);
+      toast.success(`Exported ${valid.length} sheets at ${sheetPixels(BASE_SIZE, dpi).dpi} DPI`);
     } finally {
       setBusy(false);
     }
@@ -428,11 +428,11 @@ function Index() {
               <Input
                 id="dpi"
                 type="number"
-                min={72}
+                min={BASE_DPI}
                 max={MAX_DPI}
                 value={dpi}
                 onChange={(e) =>
-                  setDpi(Math.min(MAX_DPI, Math.max(72, Number(e.target.value) || BASE_DPI)))
+                  setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, Number(e.target.value) || BASE_DPI)))
                 }
                 className="h-7 w-20"
               />

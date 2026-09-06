@@ -407,7 +407,7 @@ export function renderShirt(
 
 /** Pixel dimensions of a print sheet for a given size + DPI (capped at MAX_DPI). */
 export function sheetPixels(spec: SizeSpec, dpi: number) {
-  const d = Math.min(MAX_DPI, Math.max(72, Math.round(dpi)));
+  const d = Math.min(MAX_DPI, Math.max(BASE_DPI, Math.round(dpi)));
   return { w: Math.round(spec.w * d), h: Math.round(spec.h * d), dpi: d };
 }
 
