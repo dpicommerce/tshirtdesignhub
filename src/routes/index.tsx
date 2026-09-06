@@ -333,9 +333,10 @@ function Index() {
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h);
+    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100);
     return await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
   };
+
 
   const download = (blob: Blob, filename: string) => {
     const a = document.createElement("a");
