@@ -380,7 +380,7 @@ function Index() {
         );
       }
       const out = await zip.generateAsync({ type: "blob" });
-      download(out, `tshirt-prints-${dpi}dpi.zip`);
+      download(out, `tshirt-prints-${sheetPixels(BASE_SIZE, dpi).dpi}dpi.zip`);
       toast.success(`Exported ${valid.length} sheets at ${sheetPixels(BASE_SIZE, dpi).dpi} DPI`);
     } finally {
       setBusy(false);
