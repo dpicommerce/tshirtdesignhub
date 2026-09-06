@@ -7,7 +7,9 @@ import {
   FileSpreadsheet,
   ImagePlus,
   Loader2,
+  Minus,
   Plus,
+
   Ruler,
   Shirt,
   Trash2,
