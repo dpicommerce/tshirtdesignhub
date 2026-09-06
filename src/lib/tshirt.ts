@@ -293,9 +293,12 @@ function drawLayer(
   l: LayerStyle,
   w: number,
   h: number,
+  ox: number,
+  oy: number,
+  scale: number,
 ) {
   if (!text) return;
-  const fontPx = (l.sizePct / 100) * w;
+  const fontPx = (l.sizePct / 100) * w * scale;
   const font = `${l.weight} ${fontPx}px ${l.fontFamily}, sans-serif`;
   ctx.save();
   ctx.font = font;
@@ -308,7 +311,7 @@ function drawLayer(
   const tracking = (l.letterSpacingPct / 100) * fontPx;
   const total = measureTracked(ctx, text, tracking);
 
-  ctx.translate((l.xPct / 100) * w, (l.yPct / 100) * h);
+  ctx.translate(ox + (l.xPct / 100) * w, oy + (l.yPct / 100) * h);
   if (l.rotation) ctx.rotate((l.rotation * Math.PI) / 180);
 
   const strokeW = (l.outlineWidth / 100) * fontPx * 2;
@@ -361,7 +364,11 @@ function drawLayer(
   ctx.restore();
 }
 
-/** Renders the artwork + all personalised text layers at the given output width. */
+/**
+ * Renders the artwork + all personalised text layers at the given output size.
+ * Text is positioned and scaled relative to the printed artwork area (not the
+ * raw canvas), so every shirt size keeps identical text placement.
+ */
 export function renderShirt(
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
@@ -369,6 +376,7 @@ export function renderShirt(
   style: DesignStyle,
   outputWidth: number,
   outputHeight?: number,
+  textScale = 1,
 ) {
   const ratio = img.naturalHeight / img.naturalWidth;
   const w = Math.max(1, Math.round(outputWidth));
@@ -384,14 +392,18 @@ export function renderShirt(
   const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
   const dw = img.naturalWidth * scale;
   const dh = img.naturalHeight * scale;
-  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  const dx = (w - dw) / 2;
+  const dy = (h - dh) / 2;
+  ctx.drawImage(img, dx, dy, dw, dh);
 
+  const ts = Math.max(0.2, Math.min(3, textScale));
   for (const key of LAYER_KEYS) {
     const l = style[key];
     if (!l.enabled) continue;
-    drawLayer(ctx, layerText(key, row, l), l, w, h);
+    drawLayer(ctx, layerText(key, row, l), l, dw, dh, dx, dy, ts);
   }
 }
+
 
 /** Pixel dimensions of a print sheet for a given size + DPI (capped at MAX_DPI). */
 export function sheetPixels(spec: SizeSpec, dpi: number) {

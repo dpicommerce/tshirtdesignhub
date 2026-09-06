@@ -7,7 +7,9 @@ import {
   FileSpreadsheet,
   ImagePlus,
   Loader2,
+  Minus,
   Plus,
+
   Ruler,
   Shirt,
   Trash2,
@@ -88,7 +90,9 @@ function Index() {
   const [layer, setLayer] = useState<LayerKey>("name");
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
+  const [textScale, setTextScale] = useState(100);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
+
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
@@ -165,8 +169,9 @@ function Index() {
     if (!img || !previewRef.current || !active) return;
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
-    renderShirt(previewRef.current, img, active, style, 1000, Math.round(1000 * ratio));
-  }, [img, active, style, chart, fontsReady]);
+    renderShirt(previewRef.current, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100);
+  }, [img, active, style, chart, textScale, fontsReady]);
+
 
   const update = (id: string, p: Partial<PersonRow>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...p } : r)));
@@ -330,9 +335,10 @@ function Index() {
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h);
+    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100);
     return await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
   };
+
 
   const download = (blob: Blob, filename: string) => {
     const a = document.createElement("a");
@@ -760,9 +766,71 @@ function Index() {
             </div>
 
             <div>
-              <Label>Size — {L.sizePct.toFixed(1)}%</Label>
-              {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 30, 0.5)}
+              <div className="flex items-center justify-between gap-2">
+                <Label>Text size</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => patch({ sizePct: Math.max(1, +(L.sizePct - 0.5).toFixed(1)) })}
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={40}
+                    step={0.5}
+                    value={L.sizePct}
+                    onChange={(e) =>
+                      patch({
+                        sizePct: Math.min(40, Math.max(1, Number(e.target.value) || L.sizePct)),
+                      })
+                    }
+                    className="h-7 w-20"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => patch({ sizePct: Math.min(40, +(L.sizePct + 0.5).toFixed(1)) })}
+                  >
+                    <Plus className="size-3" />
+                  </Button>
+                </div>
+              </div>
+              {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 40, 0.5)}
             </div>
+
+            <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <Label>All text size — {textScale}%</Label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => setTextScale((v) => Math.max(20, v - 5))}
+                  >
+                    <Minus className="size-3" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => setTextScale((v) => Math.min(300, v + 5))}
+                  >
+                    <Plus className="size-3" />
+                  </Button>
+                </div>
+              </div>
+              {num(textScale, setTextScale, 20, 300, 5)}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Scales every line at once. Text keeps the same position on every shirt size.
+              </p>
+            </div>
+
             <div>
               <Label>Horizontal — {L.xPct.toFixed(0)}%</Label>
               {num(L.xPct, (n) => patch({ xPct: n }), 0, 100, 0.5)}
