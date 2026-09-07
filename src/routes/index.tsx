@@ -379,7 +379,8 @@ function Index() {
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
     renderShirt(c, img!, row, style, px.w, px.h, textScale / 100);
-    return await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
+    const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
+    return await pngWithDpi(raw, px.dpi);
   };
 
 
