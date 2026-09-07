@@ -319,6 +319,10 @@ function drawLayer(
 
   ctx.translate(ox + (l.xPct / 100) * w, oy + (l.yPct / 100) * h);
   if (l.rotation) ctx.rotate((l.rotation * Math.PI) / 180);
+  const sx = Math.max(0.1, Math.min(4, (l.widthPct ?? 100) / 100));
+  const sy = Math.max(0.1, Math.min(4, (l.heightPct ?? 100) / 100));
+  if (sx !== 1 || sy !== 1) ctx.scale(sx, sy);
+
 
   const strokeW = (l.outlineWidth / 100) * fontPx * 2;
   ctx.lineWidth = strokeW;
