@@ -28,6 +28,10 @@ export type LayerStyle = {
   uppercase: boolean;
   /** font size as % of image width */
   sizePct: number;
+  /** horizontal stretch of the text, % (100 = normal) */
+  widthPct: number;
+  /** vertical stretch of the text, % (100 = normal) */
+  heightPct: number;
   xPct: number;
   yPct: number;
   rotation: number;
