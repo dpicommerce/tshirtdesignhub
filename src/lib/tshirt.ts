@@ -129,6 +129,8 @@ const baseLayer: LayerStyle = {
   weight: 400,
   uppercase: true,
   sizePct: 9,
+  widthPct: 100,
+  heightPct: 100,
   xPct: 50,
   yPct: 62,
   rotation: 0,
