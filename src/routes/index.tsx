@@ -14,10 +14,10 @@ import {
   Plus,
 
   Ruler,
-  Shirt,
   Trash2,
   Type,
 } from "lucide-react";
+import justhueLogo from "@/assets/justhue-logo.jpeg.asset.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,13 +60,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "PressName — Bulk T-Shirt Print Sheet Generator" },
+      { title: "JustHue — Bulk T-Shirt Print Sheet Generator" },
       {
         name: "description",
         content:
           "Upload artwork and an Excel size chart, personalise names, numbers and phone lines, then export print-ready sheets at the exact inch size and DPI for every person.",
       },
-      { property: "og:title", content: "PressName — Bulk T-Shirt Print Sheets" },
+      { property: "og:title", content: "JustHue — Bulk T-Shirt Print Sheets" },
       {
         property: "og:description",
         content:
@@ -453,14 +453,13 @@ function Index() {
 
       <header className="border-b border-border/70">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-5 sm:px-6">
-          <span
-            className="flex size-10 items-center justify-center rounded-lg text-primary-foreground"
-            style={{ background: "var(--gradient-accent)" }}
-          >
-            <Shirt className="size-5" />
-          </span>
+          <img
+            src={justhueLogo.url}
+            alt="JustHue"
+            className="size-16 rounded-md bg-card object-contain sm:size-20"
+          />
           <div className="mr-auto">
-            <h1 className="text-2xl leading-none tracking-wide sm:text-3xl">PRESSNAME</h1>
+            <h1 className="text-2xl leading-none tracking-wide sm:text-3xl">JUSTHUE</h1>
             <p className="text-xs text-muted-foreground">
               Base sheet {BASE_SIZE.w}×{BASE_SIZE.h}" at {BASE_DPI} DPI · resized per size chart
             </p>
