@@ -871,6 +871,51 @@ function Index() {
               {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 40, 0.5)}
             </div>
 
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Text width</Label>
+                  <Input
+                    type="number"
+                    min={20}
+                    max={300}
+                    step={1}
+                    value={L.widthPct}
+                    onChange={(e) =>
+                      patch({
+                        widthPct: Math.min(300, Math.max(20, Number(e.target.value) || L.widthPct)),
+                      })
+                    }
+                    className="h-7 w-20"
+                  />
+                </div>
+                {num(L.widthPct, (n) => patch({ widthPct: n }), 20, 300, 1)}
+              </div>
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Text height</Label>
+                  <Input
+                    type="number"
+                    min={20}
+                    max={300}
+                    step={1}
+                    value={L.heightPct}
+                    onChange={(e) =>
+                      patch({
+                        heightPct: Math.min(
+                          300,
+                          Math.max(20, Number(e.target.value) || L.heightPct),
+                        ),
+                      })
+                    }
+                    className="h-7 w-20"
+                  />
+                </div>
+                {num(L.heightPct, (n) => patch({ heightPct: n }), 20, 300, 1)}
+              </div>
+            </div>
+
+
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
               <div className="flex items-center justify-between gap-2">
                 <Label>All text size — {textScale}%</Label>
