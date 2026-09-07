@@ -500,6 +500,29 @@ function Index() {
                 </span>
               </h2>
               <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => stepRow(-1)}
+                  disabled={!rows.length}
+                  title="Previous person"
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => stepRow(1)}
+                  disabled={!rows.length}
+                  title="Next person"
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+                <Button
+                  variant={showGrid ? "default" : "secondary"}
+                  onClick={() => setShowGrid((v) => !v)}
+                  title="Toggle inch grid"
+                >
+                  <Grid3x3 className="size-4" />
+                </Button>
                 <label>
                   <input
                     type="file"
