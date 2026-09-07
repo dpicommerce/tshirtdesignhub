@@ -431,3 +431,66 @@ export function slug(v: string) {
       .replace(/^-|-$/g, "") || "name"
   );
 }
+
+/* ---------- PNG DPI metadata (pHYs chunk) ---------- */
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(bytes: Uint8Array) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]!) & 0xff]! ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/**
+ * Rewrites a PNG blob so it carries a physical-pixel (pHYs) chunk, i.e. the
+ * file reports the real print resolution instead of the default 72 DPI.
+ */
+export async function pngWithDpi(blob: Blob, dpi: number): Promise<Blob> {
+  const src = new Uint8Array(await blob.arrayBuffer());
+  const ppm = Math.round(dpi / 0.0254);
+
+  const chunk = new Uint8Array(21);
+  const dv = new DataView(chunk.buffer);
+  dv.setUint32(0, 9);
+  chunk.set([0x70, 0x48, 0x59, 0x73], 4); // "pHYs"
+  dv.setUint32(8, ppm);
+  dv.setUint32(12, ppm);
+  chunk[16] = 1; // unit = metre
+  dv.setUint32(17, crc32(chunk.subarray(4, 17)));
+
+  // find insertion point: after IHDR (8 sig + 4 len + 4 type + 13 data + 4 crc)
+  let pos = 8;
+  let insertAt = 8;
+  const view = new DataView(src.buffer, src.byteOffset, src.byteLength);
+  while (pos + 8 <= src.length) {
+    const len = view.getUint32(pos);
+    const type = String.fromCharCode(src[pos + 4]!, src[pos + 5]!, src[pos + 6]!, src[pos + 7]!);
+    const next = pos + 12 + len;
+    if (type === "IHDR") insertAt = next;
+    if (type === "pHYs") {
+      // replace existing chunk
+      const out = new Uint8Array(src.length - (12 + len) + chunk.length);
+      out.set(src.subarray(0, pos), 0);
+      out.set(chunk, pos);
+      out.set(src.subarray(next), pos + chunk.length);
+      return new Blob([out], { type: "image/png" });
+    }
+    if (type === "IDAT" || type === "IEND") break;
+    pos = next;
+  }
+
+  const out = new Uint8Array(src.length + chunk.length);
+  out.set(src.subarray(0, insertAt), 0);
+  out.set(chunk, insertAt);
+  out.set(src.subarray(insertAt), insertAt + chunk.length);
+  return new Blob([out], { type: "image/png" });
+}
