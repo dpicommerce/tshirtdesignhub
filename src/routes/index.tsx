@@ -46,6 +46,7 @@ import {
   defaultStyle,
   findSize,
   renderShirt,
+  pngWithDpi,
   sheetPixels,
   slug,
   type DesignStyle,
