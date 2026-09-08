@@ -17,7 +17,7 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import justhueLogo from "@/assets/justhue-logo.jpeg.asset.json";
+const justhueLogo = { url: "/justhue-logo.jpeg" };
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,7 +85,7 @@ const starterRows: PersonRow[] = [
   { id: uid(), name: "Jordan Blake", phone: "91234 56780", number: "", size: "(XL)42", qty: 2 },
 ];
 
-function Index() {
+export function Index() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<PersonRow[]>(starterRows);
