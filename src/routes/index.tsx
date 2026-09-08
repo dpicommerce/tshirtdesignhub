@@ -17,7 +17,8 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-const justhueLogo = { url: "/justhue-logo.jpeg" };
+import justhueLogoSrc from "@/assets/justhue-logo.jpeg";
+const justhueLogo = { url: justhueLogoSrc };
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
