@@ -1,3 +1,5 @@
+// src/lib/tshirt.ts
+
 export type PersonRow = {
   id: string;
   name: string;
@@ -5,11 +7,19 @@ export type PersonRow = {
   number: string;
   size: string;
   qty: number;
+
+  // Individual text scale for this design
+  textScale?: number;
 };
 
 export type LayerKey = "name" | "number" | "size" | "phone";
 
-export const LAYER_KEYS: LayerKey[] = ["name", "number", "size", "phone"];
+export const LAYER_KEYS: LayerKey[] = [
+  "name",
+  "number",
+  "size",
+  "phone",
+];
 
 export const LAYER_LABELS: Record<LayerKey, string> = {
   name: "Name",
@@ -19,43 +29,71 @@ export const LAYER_LABELS: Record<LayerKey, string> = {
 };
 
 export type FillMode = "solid" | "gradient";
-export type TextEffect = "none" | "shadow" | "glow" | "extrude" | "emboss";
+
+export type TextEffect =
+  | "none"
+  | "shadow"
+  | "glow"
+  | "extrude"
+  | "emboss";
 
 export type LayerStyle = {
   enabled: boolean;
   fontFamily: string;
   weight: number;
   uppercase: boolean;
-  /** font size as % of image width */
+
+  /** Font size as % of artwork width */
   sizePct: number;
-  /** horizontal stretch of the text, % (100 = normal) */
+
+  /** Horizontal stretch */
   widthPct: number;
-  /** vertical stretch of the text, % (100 = normal) */
+
+  /** Vertical stretch */
   heightPct: number;
+
+  /** Position relative to artwork */
   xPct: number;
   yPct: number;
+
   rotation: number;
-  /** total arc sweep in degrees; 0 = flat */
+
+  /** Arc sweep in degrees */
   curve: number;
+
+  /** Letter spacing */
   letterSpacingPct: number;
+
   fill: FillMode;
   colorHex: string;
+
   gradFrom: string;
   gradTo: string;
   gradAngle: number;
+
   outlineHex: string;
   outlineWidth: number;
+
   effect: TextEffect;
   effectHex: string;
   effectStrength: number;
+
   opacity: number;
 };
 
 export type DesignStyle = Record<LayerKey, LayerStyle>;
 
-export type SizeSpec = { size: string; w: number; h: number };
+export type SizeSpec = {
+  size: string;
+  w: number;
+  h: number;
+};
 
-/** Print sheet chart (inches). Default artwork sheet is 22 x 32" at 200 DPI. */
+/**
+ * Default print size chart.
+ *
+ * All dimensions are inches.
+ */
 export const DEFAULT_SIZE_CHART: SizeSpec[] = [
   { size: "18", w: 12, h: 17 },
   { size: "20", w: 12, h: 18 },
@@ -79,22 +117,43 @@ export const DEFAULT_SIZE_CHART: SizeSpec[] = [
   { size: "56", w: 30, h: 32 },
 ];
 
-export const BASE_SIZE: SizeSpec = { size: "(L)40", w: 22, h: 32 };
+export const BASE_SIZE: SizeSpec = {
+  size: "(L)40",
+  w: 22,
+  h: 32,
+};
+
 export const BASE_DPI = 200;
 export const MAX_DPI = 300;
 
 export const SIZES = DEFAULT_SIZE_CHART.map((s) => s.size);
 
-export const findSize = (chart: SizeSpec[], size: string): SizeSpec =>
-  chart.find((s) => s.size === size) ?? BASE_SIZE;
+export function findSize(
+  chart: SizeSpec[],
+  size: string,
+): SizeSpec {
+  return (
+    chart.find((s) => s.size === size) ??
+    BASE_SIZE
+  );
+}
 
-export const sizeLabel = (s: string, chart: SizeSpec[] = DEFAULT_SIZE_CHART) => {
+export function sizeLabel(
+  s: string,
+  chart: SizeSpec[] = DEFAULT_SIZE_CHART,
+) {
   const spec = chart.find((x) => x.size === s);
-  return spec ? `${spec.size} — ${spec.w}×${spec.h}"` : s;
+
+  return spec
+    ? `${spec.size} — ${spec.w}×${spec.h}"`
+    : s;
+}
+
+export type FontOption = {
+  label: string;
+  value: string;
+  custom?: boolean;
 };
-
-
-export type FontOption = { label: string; value: string; custom?: boolean };
 
 export const FONT_OPTIONS: FontOption[] = [
   { label: "Anton", value: "Anton" },
@@ -128,40 +187,76 @@ const baseLayer: LayerStyle = {
   fontFamily: "Anton",
   weight: 400,
   uppercase: true,
+
   sizePct: 9,
   widthPct: 100,
   heightPct: 100,
+
   xPct: 50,
   yPct: 62,
+
   rotation: 0,
   curve: 0,
   letterSpacingPct: 2,
+
   fill: "solid",
   colorHex: "#ffffff",
+
   gradFrom: "#fbbf24",
   gradTo: "#ef4444",
   gradAngle: 90,
+
   outlineHex: "#111111",
   outlineWidth: 0,
+
   effect: "none",
   effectHex: "#000000",
   effectStrength: 3,
+
   opacity: 100,
 };
 
 export const defaultStyle: DesignStyle = {
-  name: { ...baseLayer },
-  number: { ...baseLayer, enabled: false, sizePct: 14, yPct: 40 },
-  size: { ...baseLayer, sizePct: 4.5, yPct: 71 },
-  phone: { ...baseLayer, enabled: false, sizePct: 3.5, yPct: 78, uppercase: false },
+  name: {
+    ...baseLayer,
+  },
+
+  number: {
+    ...baseLayer,
+    enabled: false,
+    sizePct: 14,
+    yPct: 40,
+  },
+
+  size: {
+    ...baseLayer,
+    sizePct: 4.5,
+    yPct: 71,
+  },
+
+  phone: {
+    ...baseLayer,
+    enabled: false,
+    sizePct: 3.5,
+    yPct: 78,
+    uppercase: false,
+  },
 };
 
-/** Presets for quick advanced looks. */
-export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
+export const TEXT_PRESETS: {
+  label: string;
+  patch: Partial<LayerStyle>;
+}[] = [
   {
     label: "Clean white",
-    patch: { fill: "solid", colorHex: "#ffffff", outlineWidth: 0, effect: "none" },
+    patch: {
+      fill: "solid",
+      colorHex: "#ffffff",
+      outlineWidth: 0,
+      effect: "none",
+    },
   },
+
   {
     label: "Sunset gradient",
     patch: {
@@ -173,6 +268,7 @@ export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
       effect: "none",
     },
   },
+
   {
     label: "Chrome",
     patch: {
@@ -187,6 +283,7 @@ export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
       effectStrength: 2,
     },
   },
+
   {
     label: "Varsity outline",
     patch: {
@@ -199,6 +296,7 @@ export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
       effectStrength: 4,
     },
   },
+
   {
     label: "Neon glow",
     patch: {
@@ -210,6 +308,7 @@ export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
       effectStrength: 8,
     },
   },
+
   {
     label: "3D pop",
     patch: {
@@ -224,13 +323,23 @@ export const TEXT_PRESETS: { label: string; patch: Partial<LayerStyle> }[] = [
       effectStrength: 6,
     },
   },
+
   {
     label: "Arched team",
-    patch: { curve: 40, letterSpacingPct: 4, outlineWidth: 2, outlineHex: "#000000" },
+    patch: {
+      curve: 40,
+      letterSpacingPct: 4,
+      outlineWidth: 2,
+      outlineHex: "#000000",
+    },
   },
 ];
 
-export function layerText(key: LayerKey, row: PersonRow, l: LayerStyle): string {
+export function layerText(
+  key: LayerKey,
+  row: PersonRow,
+  l: LayerStyle,
+): string {
   const raw =
     key === "name"
       ? row.name
@@ -239,14 +348,31 @@ export function layerText(key: LayerKey, row: PersonRow, l: LayerStyle): string 
         : key === "size"
           ? sizeLabel(row.size)
           : row.phone;
-  const t = (raw ?? "").trim();
-  return l.uppercase ? t.toUpperCase() : t;
+
+  const text = (raw ?? "").trim();
+
+  return l.uppercase
+    ? text.toUpperCase()
+    : text;
 }
 
-function measureTracked(ctx: CanvasRenderingContext2D, text: string, tracking: number) {
+function measureTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  tracking: number,
+) {
   let total = 0;
-  for (const ch of text) total += ctx.measureText(ch).width + tracking;
-  return total - tracking;
+
+  for (const ch of text) {
+    total +=
+      ctx.measureText(ch).width +
+      tracking;
+  }
+
+  return Math.max(
+    0,
+    total - tracking,
+  );
 }
 
 function paintChars(
@@ -255,42 +381,104 @@ function paintChars(
   tracking: number,
   total: number,
   curveDeg: number,
-  fontPx: number,
   stroke: boolean,
 ) {
+  if (!text) return;
+
+  /*
+   * Flat text
+   */
   if (Math.abs(curveDeg) < 0.5) {
     let x = -total / 2;
+
     for (const ch of text) {
       const cw = ctx.measureText(ch).width;
-      if (stroke) ctx.strokeText(ch, x, 0);
+
+      if (stroke) {
+        ctx.strokeText(ch, x, 0);
+      }
+
       ctx.fillText(ch, x, 0);
+
       x += cw + tracking;
     }
+
     return;
   }
-  const sweep = (Math.abs(curveDeg) * Math.PI) / 180;
-  const radius = total / sweep;
-  const up = curveDeg > 0; // arch upward
-  let angle = -sweep / 2;
+
+  /*
+   * Curved text
+   */
+  const sweep =
+    (Math.abs(curveDeg) * Math.PI) / 180;
+
+  const safeSweep =
+    Math.max(0.01, sweep);
+
+  const radius =
+    Math.max(
+      total / safeSweep,
+      1,
+    );
+
+  const up = curveDeg > 0;
+
+  let angle = -safeSweep / 2;
+
   for (const ch of text) {
-    const cw = ctx.measureText(ch).width;
-    const step = (cw + tracking) / radius;
+    const cw =
+      ctx.measureText(ch).width;
+
+    const step =
+      (cw + tracking) / radius;
+
     ctx.save();
+
     if (up) {
       ctx.translate(0, radius);
-      ctx.rotate(angle + step / 2);
-      ctx.translate(0, -radius);
+
+      ctx.rotate(
+        angle + step / 2,
+      );
+
+      ctx.translate(
+        0,
+        -radius,
+      );
     } else {
-      ctx.translate(0, -radius);
-      ctx.rotate(-(angle + step / 2));
-      ctx.translate(0, radius);
+      ctx.translate(
+        0,
+        -radius,
+      );
+
+      ctx.rotate(
+        -(angle + step / 2),
+      );
+
+      ctx.translate(
+        0,
+        radius,
+      );
     }
-    if (stroke) ctx.strokeText(ch, -cw / 2, 0);
-    ctx.fillText(ch, -cw / 2, 0);
+
+    if (stroke) {
+      ctx.strokeText(
+        ch,
+        -cw / 2,
+        0,
+      );
+    }
+
+    ctx.fillText(
+      ch,
+      -cw / 2,
+      0,
+    );
+
     ctx.restore();
+
     angle += step;
   }
-  void fontPx;
 }
 
 function drawLayer(
@@ -304,80 +492,287 @@ function drawLayer(
   scale: number,
 ) {
   if (!text) return;
-  const fontPx = (l.sizePct / 100) * w * scale;
-  const font = `${l.weight} ${fontPx}px ${l.fontFamily}, sans-serif`;
+  if (!l.enabled) return;
+
+  /*
+   * IMPORTANT:
+   *
+   * Font size is based on the ACTUAL OUTPUT ARTWORK WIDTH.
+   *
+   * Therefore:
+   *
+   * 12" shirt → smaller text
+   * 22" shirt → normal text
+   * 30" shirt → larger text
+   *
+   * This keeps the physical design proportional.
+   */
+  const fontPx =
+    (l.sizePct / 100) *
+    w *
+    scale;
+
+  const safeFontPx =
+    Math.max(1, fontPx);
+
+  const font =
+    `${l.weight} ${safeFontPx}px ${l.fontFamily}, sans-serif`;
+
   ctx.save();
+
   ctx.font = font;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
+
   ctx.lineJoin = "round";
   ctx.miterLimit = 2;
-  ctx.globalAlpha = Math.max(0, Math.min(1, l.opacity / 100));
 
-  const tracking = (l.letterSpacingPct / 100) * fontPx;
-  const total = measureTracked(ctx, text, tracking);
+  ctx.globalAlpha =
+    Math.max(
+      0,
+      Math.min(
+        1,
+        l.opacity / 100,
+      ),
+    );
 
-  ctx.translate(ox + (l.xPct / 100) * w, oy + (l.yPct / 100) * h);
-  if (l.rotation) ctx.rotate((l.rotation * Math.PI) / 180);
-  const sx = Math.max(0.1, Math.min(4, (l.widthPct ?? 100) / 100));
-  const sy = Math.max(0.1, Math.min(4, (l.heightPct ?? 100) / 100));
-  if (sx !== 1 || sy !== 1) ctx.scale(sx, sy);
+  const tracking =
+    (l.letterSpacingPct / 100) *
+    safeFontPx;
 
+  const total =
+    measureTracked(
+      ctx,
+      text,
+      tracking,
+    );
 
-  const strokeW = (l.outlineWidth / 100) * fontPx * 2;
+  /*
+   * Text position is relative to the
+   * selected physical artwork area.
+   */
+  ctx.translate(
+    ox + (l.xPct / 100) * w,
+    oy + (l.yPct / 100) * h,
+  );
+
+  if (l.rotation) {
+    ctx.rotate(
+      (l.rotation * Math.PI) / 180,
+    );
+  }
+
+  const sx = Math.max(
+    0.1,
+    Math.min(
+      4,
+      (l.widthPct ?? 100) / 100,
+    ),
+  );
+
+  const sy = Math.max(
+    0.1,
+    Math.min(
+      4,
+      (l.heightPct ?? 100) / 100,
+    ),
+  );
+
+  if (sx !== 1 || sy !== 1) {
+    ctx.scale(sx, sy);
+  }
+
+  const strokeW =
+    (l.outlineWidth / 100) *
+    safeFontPx *
+    2;
+
   ctx.lineWidth = strokeW;
   ctx.strokeStyle = l.outlineHex;
 
-  const unit = fontPx / 100;
+  const unit =
+    safeFontPx / 100;
 
-  // --- effects painted behind the main glyphs ---
+  /*
+   * Extrude effect
+   */
   if (l.effect === "extrude") {
-    const depth = Math.max(1, Math.round(l.effectStrength * 3));
-    ctx.fillStyle = l.effectHex;
-    for (let i = depth; i >= 1; i--) {
+    const depth = Math.max(
+      1,
+      Math.round(
+        l.effectStrength * 3,
+      ),
+    );
+
+    ctx.fillStyle =
+      l.effectHex;
+
+    for (
+      let i = depth;
+      i >= 1;
+      i--
+    ) {
       ctx.save();
-      ctx.translate(i * unit, i * unit);
-      paintChars(ctx, text, tracking, total, l.curve, fontPx, false);
+
+      ctx.translate(
+        i * unit,
+        i * unit,
+      );
+
+      paintChars(
+        ctx,
+        text,
+        tracking,
+        total,
+        l.curve,
+        false,
+      );
+
       ctx.restore();
     }
-  } else if (l.effect === "emboss") {
-    ctx.fillStyle = l.effectHex;
+  }
+
+  /*
+   * Emboss effect
+   */
+  if (l.effect === "emboss") {
+    ctx.fillStyle =
+      l.effectHex;
+
     ctx.save();
-    ctx.translate(-l.effectStrength * unit, -l.effectStrength * unit);
-    paintChars(ctx, text, tracking, total, l.curve, fontPx, false);
+
+    ctx.translate(
+      -l.effectStrength * unit,
+      -l.effectStrength * unit,
+    );
+
+    paintChars(
+      ctx,
+      text,
+      tracking,
+      total,
+      l.curve,
+      false,
+    );
+
     ctx.restore();
   }
 
+  /*
+   * Shadow
+   */
   if (l.effect === "shadow") {
-    ctx.shadowColor = l.effectHex;
-    ctx.shadowBlur = l.effectStrength * unit * 2;
-    ctx.shadowOffsetX = l.effectStrength * unit;
-    ctx.shadowOffsetY = l.effectStrength * unit;
-  } else if (l.effect === "glow") {
-    ctx.shadowColor = l.effectHex;
-    ctx.shadowBlur = l.effectStrength * unit * 4;
+    ctx.shadowColor =
+      l.effectHex;
+
+    ctx.shadowBlur =
+      l.effectStrength *
+      unit *
+      2;
+
+    ctx.shadowOffsetX =
+      l.effectStrength *
+      unit;
+
+    ctx.shadowOffsetY =
+      l.effectStrength *
+      unit;
   }
 
+  /*
+   * Glow
+   */
+  if (l.effect === "glow") {
+    ctx.shadowColor =
+      l.effectHex;
+
+    ctx.shadowBlur =
+      l.effectStrength *
+      unit *
+      4;
+  }
+
+  /*
+   * Fill
+   */
   if (l.fill === "gradient") {
-    const a = (l.gradAngle * Math.PI) / 180;
-    const rx = (Math.cos(a) * total) / 2;
-    const ry = (Math.sin(a) * fontPx) / 2;
-    const g = ctx.createLinearGradient(-rx, -ry, rx, ry);
-    g.addColorStop(0, l.gradFrom);
-    g.addColorStop(1, l.gradTo);
-    ctx.fillStyle = g;
+    const angle =
+      (l.gradAngle * Math.PI) /
+      180;
+
+    const rx =
+      (Math.cos(angle) *
+        total) /
+      2;
+
+    const ry =
+      (Math.sin(angle) *
+        safeFontPx) /
+      2;
+
+    const gradient =
+      ctx.createLinearGradient(
+        -rx,
+        -ry,
+        rx,
+        ry,
+      );
+
+    gradient.addColorStop(
+      0,
+      l.gradFrom,
+    );
+
+    gradient.addColorStop(
+      1,
+      l.gradTo,
+    );
+
+    ctx.fillStyle =
+      gradient;
   } else {
-    ctx.fillStyle = l.colorHex;
+    ctx.fillStyle =
+      l.colorHex;
   }
 
-  paintChars(ctx, text, tracking, total, l.curve, fontPx, strokeW > 0);
+  paintChars(
+    ctx,
+    text,
+    tracking,
+    total,
+    l.curve,
+    strokeW > 0,
+  );
+
   ctx.restore();
 }
 
 /**
- * Renders the artwork + all personalised text layers at the given output size.
- * Text is positioned and scaled relative to the printed artwork area (not the
- * raw canvas), so every shirt size keeps identical text placement.
+ * Renders the design into the EXACT requested
+ * physical canvas dimensions.
+ *
+ * IMPORTANT CHANGE:
+ *
+ * Previous implementation used:
+ *
+ *   Math.min(...)
+ *
+ * which FIT the artwork inside the target canvas
+ * and therefore created transparent margins.
+ *
+ * This implementation uses:
+ *
+ *   Math.max(...)
+ *
+ * and clips the artwork to the target canvas.
+ *
+ * Result:
+ *
+ * 12 × 17" → completely filled 12 × 17" canvas
+ * 22 × 32" → completely filled 22 × 32" canvas
+ * 30 × 32" → completely filled 30 × 32" canvas
+ *
+ * No transparent outer frame is created.
  */
 export function renderShirt(
   canvas: HTMLCanvasElement,
@@ -388,109 +783,525 @@ export function renderShirt(
   outputHeight?: number,
   textScale = 1,
 ) {
-  const ratio = img.naturalHeight / img.naturalWidth;
-  const w = Math.max(1, Math.round(outputWidth));
-  const h = Math.max(1, Math.round(outputHeight ?? outputWidth * ratio));
+  const sourceW =
+    img.naturalWidth ||
+    img.width;
+
+  const sourceH =
+    img.naturalHeight ||
+    img.height;
+
+  if (
+    sourceW <= 0 ||
+    sourceH <= 0
+  ) {
+    return;
+  }
+
+  const w = Math.max(
+    1,
+    Math.round(outputWidth),
+  );
+
+  /*
+   * If explicit height is supplied,
+   * ALWAYS use it.
+   */
+  const h = Math.max(
+    1,
+    Math.round(
+      outputHeight ??
+        (w * sourceH) /
+          sourceW,
+    ),
+  );
+
   canvas.width = w;
   canvas.height = h;
-  const ctx = canvas.getContext("2d")!;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.clearRect(0, 0, w, h);
 
-  // fit artwork inside the sheet, preserving its aspect ratio
-  const scale = Math.min(w / img.naturalWidth, h / img.naturalHeight);
-  const dw = img.naturalWidth * scale;
-  const dh = img.naturalHeight * scale;
-  const dx = (w - dw) / 2;
-  const dy = (h - dh) / 2;
-  ctx.drawImage(img, dx, dy, dw, dh);
+  const ctx =
+    canvas.getContext("2d", {
+      alpha: true,
+    });
 
-  const ts = Math.max(0.2, Math.min(3, textScale));
-  for (const key of LAYER_KEYS) {
+  if (!ctx) {
+    throw new Error(
+      "Unable to create canvas context.",
+    );
+  }
+
+  ctx.imageSmoothingEnabled =
+    true;
+
+  ctx.imageSmoothingQuality =
+    "high";
+
+  ctx.clearRect(
+    0,
+    0,
+    w,
+    h,
+  );
+
+  /*
+   * ============================================================
+   * SIZE-AWARE ARTWORK RENDERING
+   * ============================================================
+   *
+   * We use COVER instead of FIT.
+   *
+   * COVER:
+   *   - fills entire output
+   *   - preserves aspect ratio
+   *   - crops only the excess
+   *   - creates NO transparent outer border
+   *
+   * This is especially important because the size chart
+   * contains different physical aspect ratios.
+   */
+  const scale =
+    Math.max(
+      w / sourceW,
+      h / sourceH,
+    );
+
+  const drawW =
+    sourceW * scale;
+
+  const drawH =
+    sourceH * scale;
+
+  const drawX =
+    (w - drawW) / 2;
+
+  const drawY =
+    (h - drawH) / 2;
+
+  /*
+   * Clip to exact physical canvas.
+   */
+  ctx.save();
+
+  ctx.beginPath();
+
+  ctx.rect(
+    0,
+    0,
+    w,
+    h,
+  );
+
+  ctx.clip();
+
+  ctx.drawImage(
+    img,
+    drawX,
+    drawY,
+    drawW,
+    drawH,
+  );
+
+  ctx.restore();
+
+  /*
+   * ============================================================
+   * TEXT AREA
+   * ============================================================
+   *
+   * Text is positioned against the FULL selected size.
+   *
+   * Example:
+   *
+   * (S)36 = 20 × 31"
+   * (L)40 = 22 × 32"
+   * (XXL)44 = 24 × 32"
+   *
+   * Therefore every size gets proportional text placement.
+   */
+  const ts =
+    Math.max(
+      0.2,
+      Math.min(
+        3,
+        Number.isFinite(textScale)
+          ? textScale
+          : 1,
+      ),
+    );
+
+  /*
+   * Use the entire physical output area.
+   *
+   * This is intentional.
+   *
+   * Text must scale with the selected size,
+   * not with the original uploaded image dimensions.
+   */
+  const artworkX = 0;
+  const artworkY = 0;
+  const artworkW = w;
+  const artworkH = h;
+
+  for (
+    const key of LAYER_KEYS
+  ) {
     const l = style[key];
-    if (!l.enabled) continue;
-    drawLayer(ctx, layerText(key, row, l), l, dw, dh, dx, dy, ts);
+
+    if (!l.enabled) {
+      continue;
+    }
+
+    const text =
+      layerText(
+        key,
+        row,
+        l,
+      );
+
+    if (!text) {
+      continue;
+    }
+
+    drawLayer(
+      ctx,
+      text,
+      l,
+      artworkW,
+      artworkH,
+      artworkX,
+      artworkY,
+      ts,
+    );
   }
 }
 
+/**
+ * Returns exact pixel dimensions for
+ * physical size + DPI.
+ */
+export function sheetPixels(
+  spec: SizeSpec,
+  dpi: number,
+) {
+  const d = Math.min(
+    MAX_DPI,
+    Math.max(
+      BASE_DPI,
+      Math.round(dpi),
+    ),
+  );
 
-/** Pixel dimensions of a print sheet for a given size + DPI (capped at MAX_DPI). */
-export function sheetPixels(spec: SizeSpec, dpi: number) {
-  const d = Math.min(MAX_DPI, Math.max(BASE_DPI, Math.round(dpi)));
-  return { w: Math.round(spec.w * d), h: Math.round(spec.h * d), dpi: d };
+  return {
+    w: Math.max(
+      1,
+      Math.round(
+        spec.w * d,
+      ),
+    ),
+
+    h: Math.max(
+      1,
+      Math.round(
+        spec.h * d,
+      ),
+    ),
+
+    dpi: d,
+  };
 }
 
-
+/**
+ * Safe filename slug.
+ */
 export function slug(v: string) {
   return (
     v
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "name"
+      .replace(
+        /[^a-z0-9]+/g,
+        "-",
+      )
+      .replace(
+        /^-|-$/g,
+        "",
+      ) ||
+    "name"
   );
 }
 
-/* ---------- PNG DPI metadata (pHYs chunk) ---------- */
+/* ============================================================
+ * PNG DPI METADATA
+ * ============================================================ */
 
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
-  }
-  return t;
-})();
+const CRC_TABLE =
+  (() => {
+    const t =
+      new Uint32Array(
+        256,
+      );
 
-function crc32(bytes: Uint8Array) {
+    for (
+      let n = 0;
+      n < 256;
+      n++
+    ) {
+      let c = n;
+
+      for (
+        let k = 0;
+        k < 8;
+        k++
+      ) {
+        c =
+          c & 1
+            ? 0xedb88320 ^
+              (c >>> 1)
+            : c >>> 1;
+      }
+
+      t[n] =
+        c >>> 0;
+    }
+
+    return t;
+  })();
+
+function crc32(
+  bytes: Uint8Array,
+) {
   let c = 0xffffffff;
-  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]!) & 0xff]! ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
+
+  for (
+    let i = 0;
+    i < bytes.length;
+    i++
+  ) {
+    c =
+      CRC_TABLE[
+        (c ^
+          bytes[i]!) &
+          0xff
+      ]! ^
+      (c >>> 8);
+  }
+
+  return (
+    c ^
+    0xffffffff
+  ) >>> 0;
 }
 
 /**
- * Rewrites a PNG blob so it carries a physical-pixel (pHYs) chunk, i.e. the
- * file reports the real print resolution instead of the default 72 DPI.
+ * Adds/replaces PNG pHYs metadata.
+ *
+ * DPI is preserved as physical print resolution.
  */
-export async function pngWithDpi(blob: Blob, dpi: number): Promise<Blob> {
-  const src = new Uint8Array(await blob.arrayBuffer());
-  const ppm = Math.round(dpi / 0.0254);
+export async function pngWithDpi(
+  blob: Blob,
+  dpi: number,
+): Promise<Blob> {
+  const src =
+    new Uint8Array(
+      await blob.arrayBuffer(),
+    );
 
-  const chunk = new Uint8Array(21);
-  const dv = new DataView(chunk.buffer);
-  dv.setUint32(0, 9);
-  chunk.set([0x70, 0x48, 0x59, 0x73], 4); // "pHYs"
-  dv.setUint32(8, ppm);
-  dv.setUint32(12, ppm);
-  chunk[16] = 1; // unit = metre
-  dv.setUint32(17, crc32(chunk.subarray(4, 17)));
+  const safeDpi =
+    Math.min(
+      MAX_DPI,
+      Math.max(
+        BASE_DPI,
+        Math.round(dpi),
+      ),
+    );
 
-  // find insertion point: after IHDR (8 sig + 4 len + 4 type + 13 data + 4 crc)
+  const ppm =
+    Math.round(
+      safeDpi / 0.0254,
+    );
+
+  /*
+   * PNG pHYs chunk:
+   *
+   * length  = 9
+   * type    = pHYs
+   * X ppm
+   * Y ppm
+   * unit    = 1 metre
+   * CRC
+   */
+  const chunk =
+    new Uint8Array(
+      21,
+    );
+
+  const dv =
+    new DataView(
+      chunk.buffer,
+    );
+
+  dv.setUint32(
+    0,
+    9,
+  );
+
+  chunk.set(
+    [
+      0x70,
+      0x48,
+      0x59,
+      0x73,
+    ],
+    4,
+  );
+
+  dv.setUint32(
+    8,
+    ppm,
+  );
+
+  dv.setUint32(
+    12,
+    ppm,
+  );
+
+  chunk[16] = 1;
+
+  dv.setUint32(
+    17,
+    crc32(
+      chunk.subarray(
+        4,
+        17,
+      ),
+    ),
+  );
+
+  /*
+   * Search PNG chunks.
+   */
   let pos = 8;
   let insertAt = 8;
-  const view = new DataView(src.buffer, src.byteOffset, src.byteLength);
-  while (pos + 8 <= src.length) {
-    const len = view.getUint32(pos);
-    const type = String.fromCharCode(src[pos + 4]!, src[pos + 5]!, src[pos + 6]!, src[pos + 7]!);
-    const next = pos + 12 + len;
-    if (type === "IHDR") insertAt = next;
-    if (type === "pHYs") {
-      // replace existing chunk
-      const out = new Uint8Array(src.length - (12 + len) + chunk.length);
-      out.set(src.subarray(0, pos), 0);
-      out.set(chunk, pos);
-      out.set(src.subarray(next), pos + chunk.length);
-      return new Blob([out], { type: "image/png" });
+
+  const view =
+    new DataView(
+      src.buffer,
+      src.byteOffset,
+      src.byteLength,
+    );
+
+  while (
+    pos + 8 <=
+    src.length
+  ) {
+    const len =
+      view.getUint32(
+        pos,
+      );
+
+    const type =
+      String.fromCharCode(
+        src[pos + 4]!,
+        src[pos + 5]!,
+        src[pos + 6]!,
+        src[pos + 7]!,
+      );
+
+    const next =
+      pos +
+      12 +
+      len;
+
+    if (type === "IHDR") {
+      insertAt = next;
     }
-    if (type === "IDAT" || type === "IEND") break;
+
+    /*
+     * Replace an existing pHYs.
+     */
+    if (
+      type === "pHYs"
+    ) {
+      const out =
+        new Uint8Array(
+          src.length -
+            (12 + len) +
+            chunk.length,
+        );
+
+      out.set(
+        src.subarray(
+          0,
+          pos,
+        ),
+        0,
+      );
+
+      out.set(
+        chunk,
+        pos,
+      );
+
+      out.set(
+        src.subarray(
+          next,
+        ),
+        pos +
+          chunk.length,
+      );
+
+      return new Blob(
+        [out],
+        {
+          type: "image/png",
+        },
+      );
+    }
+
+    if (
+      type === "IDAT" ||
+      type === "IEND"
+    ) {
+      break;
+    }
+
     pos = next;
   }
 
-  const out = new Uint8Array(src.length + chunk.length);
-  out.set(src.subarray(0, insertAt), 0);
-  out.set(chunk, insertAt);
-  out.set(src.subarray(insertAt), insertAt + chunk.length);
-  return new Blob([out], { type: "image/png" });
+  /*
+   * Insert pHYs after IHDR.
+   */
+  const out =
+    new Uint8Array(
+      src.length +
+        chunk.length,
+    );
+
+  out.set(
+    src.subarray(
+      0,
+      insertAt,
+    ),
+    0,
+  );
+
+  out.set(
+    chunk,
+    insertAt,
+  );
+
+  out.set(
+    src.subarray(
+      insertAt,
+    ),
+    insertAt +
+      chunk.length,
+  );
+
+  return new Blob(
+    [out],
+    {
+      type: "image/png",
+    },
+  );
 }
