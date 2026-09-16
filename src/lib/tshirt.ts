@@ -193,17 +193,18 @@ const baseLayer: LayerStyle = {
   heightPct: 100,
 
   xPct: 50,
-  yPct: 62,
+  yPct: 17,
 
   rotation: 0,
   curve: 0,
   letterSpacingPct: 2,
 
-  fill: "solid",
-  colorHex: "#ffffff",
+  // Default text: yellow -> red gradient
+  fill: "gradient",
+  colorHex: "#facc15",
 
-  gradFrom: "#fbbf24",
-  gradTo: "#ef4444",
+  gradFrom: "#ffff00",
+  gradTo: "#ff0000",
   gradAngle: 90,
 
   outlineHex: "#111111",
@@ -216,29 +217,47 @@ const baseLayer: LayerStyle = {
   opacity: 100,
 };
 
+// Reference layout defaults:
+// Name      -> centered at ~17% height
+// Number    -> large centered number at ~43.3% height
+// Size      -> small centered text at ~92% height
+// Phone     -> disabled by default
+//
+// Supplied reference also contains "VOLLEY BALL" at ~69% height.
+// This source file has no subtitle/static-text layer, so that text
+// must be positioned in the component that renders it.
 export const defaultStyle: DesignStyle = {
   name: {
     ...baseLayer,
+    // Reference: SAKTHI is centered around 17% height.
+    sizePct: 10,
+    xPct: 50,
+    yPct: 17,
   },
 
   number: {
     ...baseLayer,
-    enabled: false,
-    sizePct: 14,
-    yPct: 40,
+    enabled: true,
+    // Reference: 07 occupies the large center area.
+    sizePct: 34,
+    xPct: 50,
+    yPct: 43.3,
   },
 
   size: {
     ...baseLayer,
-    sizePct: 4.5,
-    yPct: 71,
+    // Small size label near the bottom.
+    sizePct: 3,
+    xPct: 50,
+    yPct: 92,
   },
 
   phone: {
     ...baseLayer,
     enabled: false,
-    sizePct: 3.5,
-    yPct: 78,
+    sizePct: 3,
+    xPct: 50,
+    yPct: 82,
     uppercase: false,
   },
 };
@@ -248,10 +267,13 @@ export const TEXT_PRESETS: {
   patch: Partial<LayerStyle>;
 }[] = [
   {
-    label: "Clean white",
+    label: "Yellow Red",
     patch: {
-      fill: "solid",
-      colorHex: "#ffffff",
+      fill: "gradient",
+      colorHex: "#facc15",
+      gradFrom: "#ffff00",
+      gradTo: "#ff0000",
+      gradAngle: 90,
       outlineWidth: 0,
       effect: "none",
     },
@@ -261,8 +283,8 @@ export const TEXT_PRESETS: {
     label: "Sunset gradient",
     patch: {
       fill: "gradient",
-      gradFrom: "#fde047",
-      gradTo: "#f43f5e",
+      gradFrom: "#ffff00",
+      gradTo: "#ff0000",
       gradAngle: 90,
       outlineWidth: 0,
       effect: "none",
