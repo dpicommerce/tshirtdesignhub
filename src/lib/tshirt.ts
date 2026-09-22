@@ -4,7 +4,8 @@ export type PersonRow = {
   id: string;
   name: string;
   phone: string;
-  number: string;
+  game: string;
+  hand: HandType;
   size: string;
   qty: number;
 
@@ -12,18 +13,18 @@ export type PersonRow = {
   textScale?: number;
 };
 
-export type LayerKey = "name" | "number" | "size" | "phone";
+export type LayerKey = "name" | "game" | "size" | "phone";
 
 export const LAYER_KEYS: LayerKey[] = [
   "name",
-  "number",
+  "game",
   "size",
   "phone",
 ];
 
 export const LAYER_LABELS: Record<LayerKey, string> = {
   name: "Name",
-  number: "Number",
+  game: "Game",
   size: "Size",
   phone: "Phone",
 };
@@ -123,6 +124,14 @@ export const BASE_SIZE: SizeSpec = {
   h: 32,
 };
 
+export type HandType = "half" | "full";
+
+export const HAND_OPTIONS: { label: string; value: HandType }[] = [
+  { label: "Half Hand", value: "half" },
+  { label: "Full Hand", value: "full" },
+];
+
+export const MIN_DPI = 72;
 export const BASE_DPI = 200;
 export const MAX_DPI = 300;
 
@@ -235,7 +244,7 @@ export const defaultStyle: DesignStyle = {
     yPct: 17,
   },
 
-  number: {
+  game: {
     ...baseLayer,
     enabled: true,
     // Reference: 07 occupies the large center area.
@@ -365,8 +374,8 @@ export function layerText(
   const raw =
     key === "name"
       ? row.name
-      : key === "number"
-        ? row.number
+      : key === "game"
+        ? row.game
         : key === "size"
           ? sizeLabel(row.size)
           : row.phone;
@@ -1008,7 +1017,7 @@ export function sheetPixels(
   const d = Math.min(
     MAX_DPI,
     Math.max(
-      BASE_DPI,
+      MIN_DPI,
       Math.round(dpi),
     ),
   );
@@ -1132,7 +1141,7 @@ export async function pngWithDpi(
     Math.min(
       MAX_DPI,
       Math.max(
-        BASE_DPI,
+        MIN_DPI,
         Math.round(dpi),
       ),
     );
