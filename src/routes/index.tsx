@@ -43,6 +43,8 @@ import {
   LAYER_KEYS,
   LAYER_LABELS,
   MAX_DPI,
+  MIN_DPI,
+  HAND_OPTIONS,
   TEXT_PRESETS,
   defaultStyle,
   findSize,
@@ -52,6 +54,7 @@ import {
   slug,
   type DesignStyle,
   type FontOption,
+  type HandType,
   type LayerKey,
   type LayerStyle,
   type PersonRow,
@@ -65,7 +68,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Upload artwork and an Excel size chart, personalise names, numbers and phone lines, then export print-ready sheets at the exact inch size and DPI for every person.",
+          "Upload artwork and an Excel size chart, personalise names, games and phone lines, then export print-ready sheets at the exact inch size and DPI for every person.",
       },
       { property: "og:title", content: "JustHue — Bulk T-Shirt Print Sheets" },
       {
@@ -81,9 +84,9 @@ export const Route = createFileRoute("/")({
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 const starterRows: PersonRow[] = [
-  { id: uid(), name: "Alex Carter", phone: "98765 43210", number: "10", size: "(L)40", qty: 1 },
-  { id: uid(), name: "Priya Nair", phone: "", number: "7", size: "(M)38", qty: 1 },
-  { id: uid(), name: "Jordan Blake", phone: "91234 56780", number: "", size: "(XL)42", qty: 2 },
+  { id: uid(), name: "Alex Carter", phone: "98765 43210", game: "10", hand: "half", size: "(L)40", qty: 1 },
+  { id: uid(), name: "Priya Nair", phone: "", game: "7", hand: "half", size: "(M)38", qty: 1 },
+  { id: uid(), name: "Jordan Blake", phone: "91234 56780", game: "", hand: "full", size: "(XL)42", qty: 2 },
 ];
 
 export function Index() {
@@ -226,7 +229,8 @@ export function Index() {
       id: uid(),
       name: "",
       phone: "",
-      number: "",
+      game: "",
+      hand: "half",
       size: BASE_SIZE.size,
       qty: 1,
     };
@@ -247,14 +251,15 @@ export function Index() {
         return {
           id: uid(),
           name: p[0] ?? "",
-          number: p[1] ?? "",
-          phone: p[2] ?? "",
-          size: p[3] || BASE_SIZE.size,
-          qty: Number(p[4]) > 0 ? Number(p[4]) : 1,
+          game: p[1] ?? "",
+          hand: (p[2]?.toLowerCase().includes("full") ? "full" : "half") as HandType,
+          phone: p[3] ?? "",
+          size: p[4] || BASE_SIZE.size,
+          qty: Number(p[5]) > 0 ? Number(p[5]) : 1,
         };
       });
     if (!parsed.length) {
-      toast.error("Nothing to import — add lines like: Alex Carter, 10, 9876543210, (L)40, 1");
+      toast.error("Nothing to import — add lines like: Alex Carter, 10, half, 9876543210, (L)40, 1");
       return;
     }
     setRows(parsed);
@@ -297,7 +302,7 @@ export function Index() {
         return;
       }
       setChart(next);
-      if (res > 0) setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, res)));
+      if (res > 0) setDpi(Math.min(MAX_DPI, Math.max(MIN_DPI, res)));
       toast.success(`Size chart loaded — ${next.length} sizes`);
     } catch {
       toast.error("That spreadsheet could not be read.");
@@ -313,17 +318,20 @@ export function Index() {
         const size = pick(r, ["size"]) || BASE_SIZE.size;
         if (!name && !size) continue;
         const qty = Number(pick(r, ["qty", "quantity", "pcs"]));
+        const handRaw = pick(r, ["hand", "sleeve", "handtype"]).toLowerCase();
+        const hand: HandType = handRaw.includes("full") ? "full" : "half";
         next.push({
           id: uid(),
           name,
-          number: pick(r, ["number", "no", "jerseyno"]),
+          game: pick(r, ["game", "number", "no", "jerseyno"]),
+          hand,
           phone: pick(r, ["phone", "phoneno", "mobile", "contact"]),
           size,
           qty: qty > 0 ? qty : 1,
         });
       }
       if (!next.length) {
-        toast.error("No rows found — expected columns Name, Number, Phone, Size, Qty.");
+        toast.error("No rows found — expected columns Name, Game, Hand, Phone, Size, Qty.");
         return;
       }
       setRows(next);
@@ -352,7 +360,7 @@ export function Index() {
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.json_to_sheet([
-        { Name: "Alex Carter", Number: 10, Phone: "9876543210", Size: "(L)40", Qty: 1 },
+        { Name: "Alex Carter", Game: 10, Hand: "Half Hand", Phone: "9876543210", Size: "(L)40", Qty: 1 },
       ]),
       "Names",
     );
@@ -406,7 +414,7 @@ export function Index() {
 
   const exportAll = async () => {
     if (!img) return;
-    const valid = rows.filter((r) => r.name.trim() || r.number.trim());
+    const valid = rows.filter((r) => r.name.trim() || r.game.trim());
     if (!valid.length) {
       toast.error("Add at least one name first.");
       return;
@@ -421,7 +429,7 @@ export function Index() {
         const blob = await renderBlob(r);
         const folder = zip.folder(`${slug(r.size)}-${spec.w}x${spec.h}in`) ?? zip;
         folder.file(
-          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.number)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
+          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.game)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
           blob,
         );
       }
@@ -473,11 +481,11 @@ export function Index() {
               <Input
                 id="dpi"
                 type="number"
-                min={BASE_DPI}
+                min={MIN_DPI}
                 max={MAX_DPI}
                 value={dpi}
                 onChange={(e) =>
-                  setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, Number(e.target.value) || BASE_DPI)))
+                  setDpi(Math.min(MAX_DPI, Math.max(MIN_DPI, Number(e.target.value) || MIN_DPI)))
                 }
                 className="h-7 w-20"
               />
@@ -593,7 +601,7 @@ export function Index() {
               <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
                 <span className="font-medium">Upload name list (.xlsx / .csv)</span>
                 <span className="text-xs text-muted-foreground">
-                  Columns: Name, Number, Phone, Size, Qty
+                  Columns: Name, Game, Hand, Phone, Size, Qty
                 </span>
                 <input
                   type="file"
@@ -650,14 +658,15 @@ export function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[820px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
                     <th className="px-2 pb-1">Name on shirt</th>
-                    <th className="px-2 pb-1">Number</th>
+                    <th className="px-2 pb-1">Game</th>
                     <th className="px-2 pb-1">Phone</th>
                     <th className="px-2 pb-1">Size</th>
+                    <th className="px-2 pb-1">Hand</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
                   </tr>
@@ -679,10 +688,10 @@ export function Index() {
                       </td>
                       <td className="px-2 py-1">
                         <Input
-                          value={r.number}
+                          value={r.game}
                           placeholder="10"
                           className="w-20"
-                          onChange={(e) => update(r.id, { number: e.target.value })}
+                          onChange={(e) => update(r.id, { game: e.target.value })}
                         />
                       </td>
                       <td className="px-2 py-1">
@@ -702,6 +711,20 @@ export function Index() {
                             {chart.map((s) => (
                               <SelectItem key={s.size} value={s.size}>
                                 {s.size} — {s.w}×{s.h}"
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="px-2 py-1">
+                        <Select value={r.hand} onValueChange={(v) => update(r.id, { hand: v as HandType })}>
+                          <SelectTrigger className="w-[125px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {HAND_OPTIONS.map((h) => (
+                              <SelectItem key={h.value} value={h.value}>
+                                {h.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -743,7 +766,7 @@ export function Index() {
                 rows={3}
                 value={bulk}
                 onChange={(e) => setBulk(e.target.value)}
-                placeholder={"Alex Carter, 10, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
+                placeholder={"Alex Carter, 10, half, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
               />
               <Button variant="secondary" onClick={importBulk} className="justify-self-start">
                 Replace roster with list
