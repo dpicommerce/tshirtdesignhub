@@ -9,8 +9,12 @@ export type PersonRow = {
   size: string;
   qty: number;
 
-  // Individual text scale for this design
+  // Optional overall text scale for backwards compatibility.
   textScale?: number;
+
+  // Individual text scale per row/image and per text layer.
+  // Changing one person/image does not change other images.
+  textScaleByLayer?: Partial<Record<LayerKey, number>>;
 };
 
 export type LayerKey = "name" | "game" | "size" | "phone";
@@ -31,6 +35,8 @@ export const LAYER_LABELS: Record<LayerKey, string> = {
 
 export type FillMode = "solid" | "gradient";
 
+export type TextOrientation = "horizontal" | "vertical";
+
 export type TextEffect =
   | "none"
   | "shadow"
@@ -43,6 +49,9 @@ export type LayerStyle = {
   fontFamily: string;
   weight: number;
   uppercase: boolean;
+
+  /** Text direction. Vertical stacks characters top-to-bottom. */
+  orientation: TextOrientation;
 
   /** Font size as % of artwork width */
   sizePct: number;
@@ -196,6 +205,7 @@ const baseLayer: LayerStyle = {
   fontFamily: "Anton",
   weight: 400,
   uppercase: true,
+  orientation: "horizontal",
 
   sizePct: 9,
   widthPct: 100,
@@ -413,8 +423,30 @@ function paintChars(
   total: number,
   curveDeg: number,
   stroke: boolean,
+  orientation: TextOrientation = "horizontal",
+  verticalLineHeight?: number,
 ) {
   if (!text) return;
+
+  /*
+   * Optional vertical text. Each character is placed on its own line,
+   * centered around the layer origin. Curve is intentionally ignored.
+   */
+  if (orientation === "vertical") {
+    const lineHeight = Math.max(1, verticalLineHeight ?? ctx.measureText("M").width);
+    const step = lineHeight + tracking;
+    const totalHeight = Math.max(0, text.length * step - tracking);
+    let y = -totalHeight / 2;
+
+    for (const ch of text) {
+      if (stroke) {
+        ctx.strokeText(ch, 0, y);
+      }
+      ctx.fillText(ch, 0, y);
+      y += step;
+    }
+    return;
+  }
 
   /*
    * Flat text
@@ -552,7 +584,7 @@ function drawLayer(
   ctx.save();
 
   ctx.font = font;
-  ctx.textAlign = "left";
+  ctx.textAlign = l.orientation === "vertical" ? "center" : "left";
   ctx.textBaseline = "middle";
 
   ctx.lineJoin = "round";
@@ -576,6 +608,12 @@ function drawLayer(
       ctx,
       text,
       tracking,
+    );
+
+  const verticalTotal =
+    Math.max(
+      safeFontPx,
+      text.length * (safeFontPx + tracking) - tracking,
     );
 
   /*
@@ -657,6 +695,8 @@ function drawLayer(
         total,
         l.curve,
         false,
+        l.orientation,
+        safeFontPx,
       );
 
       ctx.restore();
@@ -684,6 +724,8 @@ function drawLayer(
       total,
       l.curve,
       false,
+      l.orientation,
+      safeFontPx,
     );
 
     ctx.restore();
@@ -731,14 +773,23 @@ function drawLayer(
       (l.gradAngle * Math.PI) /
       180;
 
+    const gradientWidth =
+      l.orientation === "vertical"
+        ? safeFontPx
+        : total;
+    const gradientHeight =
+      l.orientation === "vertical"
+        ? verticalTotal
+        : safeFontPx;
+
     const rx =
       (Math.cos(angle) *
-        total) /
+        gradientWidth) /
       2;
 
     const ry =
       (Math.sin(angle) *
-        safeFontPx) /
+        gradientHeight) /
       2;
 
     const gradient =
@@ -773,6 +824,8 @@ function drawLayer(
     total,
     l.curve,
     strokeW > 0,
+    l.orientation,
+    safeFontPx,
   );
 
   ctx.restore();
@@ -795,6 +848,51 @@ function drawLayer(
  * The source image is never cropped.
  * Any unused area is preserved as transparent space.
  */
+export function getLayerTextScale(
+  row: PersonRow,
+  key: LayerKey,
+) {
+  const value = row.textScaleByLayer?.[key];
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0.2, Math.min(3, value));
+  }
+
+  if (typeof row.textScale === "number" && Number.isFinite(row.textScale)) {
+    return Math.max(0.2, Math.min(3, row.textScale));
+  }
+
+  return 1;
+}
+
+/** Set only one layer's scale for one row/image. */
+export function setLayerTextScale(
+  row: PersonRow,
+  key: LayerKey,
+  scale: number,
+): PersonRow {
+  return {
+    ...row,
+    textScaleByLayer: {
+      ...(row.textScaleByLayer ?? {}),
+      [key]: Math.max(0.2, Math.min(3, scale)),
+    },
+  };
+}
+
+export function setLayerOrientation(
+  style: DesignStyle,
+  key: LayerKey,
+  orientation: TextOrientation,
+): DesignStyle {
+  return {
+    ...style,
+    [key]: {
+      ...style[key],
+      orientation,
+    },
+  };
+}
+
 export function renderShirt(
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
@@ -923,7 +1021,9 @@ export function renderShirt(
    *
    * Therefore every size gets proportional text placement.
    */
-  const ts =
+  // textScale is retained as a backwards-compatible overall fallback.
+  // Each layer now uses its own row/image scale below.
+  const legacyTs =
     Math.max(
       0.2,
       Math.min(
@@ -967,6 +1067,11 @@ export function renderShirt(
       continue;
     }
 
+    const layerScale =
+      row.textScaleByLayer?.[key] ??
+      row.textScale ??
+      legacyTs;
+
     drawLayer(
       ctx,
       text,
@@ -975,7 +1080,7 @@ export function renderShirt(
       artworkH,
       artworkX,
       artworkY,
-      ts,
+      Math.max(0.2, Math.min(3, Number.isFinite(layerScale) ? layerScale : 1)),
     );
   }
 }
