@@ -49,7 +49,10 @@ import {
   defaultStyle,
   findSize,
   renderShirt,
-  pngWithDpi,
+  exportDesign,
+  getLayerTextScale,
+  setLayerTextScale,
+  setLayerOrientation,
   sheetPixels,
   slug,
   type DesignStyle,
@@ -98,7 +101,6 @@ export function Index() {
   const [layer, setLayer] = useState<LayerKey>("name");
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
-  const [textScale, setTextScale] = useState(100);
   const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
 
@@ -179,7 +181,7 @@ export function Index() {
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
     const canvas = previewRef.current;
-    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100);
+    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), 1);
     if (!showGrid) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -212,7 +214,7 @@ export function Index() {
     for (let i = 5; i < spec.w; i += 5) ctx.fillText(`${i}"`, i * xStep + 4, 4);
     for (let j = 5; j < spec.h; j += 5) ctx.fillText(`${j}"`, 4, j * yStep + 4);
     ctx.restore();
-  }, [img, active, style, chart, textScale, fontsReady, showGrid]);
+  }, [img, active, style, chart, fontsReady, showGrid]);
 
   const stepRow = (dir: 1 | -1) => {
     const idx = rows.findIndex((r) => r.id === active?.id);
@@ -388,9 +390,10 @@ export function Index() {
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100);
-    const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
-    return await pngWithDpi(raw, px.dpi);
+    renderShirt(c, img!, row, style, px.w, px.h, 1);
+    // WebP keeps the exported files much smaller than PNG while
+    // preserving the exact pixel dimensions selected by the DPI.
+    return await exportDesign(c, px.dpi, 2);
   };
 
 
@@ -406,7 +409,7 @@ export function Index() {
     if (!img || !active) return;
     setBusy(true);
     try {
-      download(await renderBlob(active), `${slug(active.name)}-${slug(active.size)}.png`);
+      download(await renderBlob(active), `${slug(active.name)}-${slug(active.size)}.webp`);
     } finally {
       setBusy(false);
     }
@@ -429,7 +432,7 @@ export function Index() {
         const blob = await renderBlob(r);
         const folder = zip.folder(`${slug(r.size)}-${spec.w}x${spec.h}in`) ?? zip;
         folder.file(
-          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.game)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
+          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.game)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.webp`,
           blob,
         );
       }
@@ -941,31 +944,107 @@ export function Index() {
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
               <div className="flex items-center justify-between gap-2">
-                <Label>All text size — {textScale}%</Label>
+                <Label>Selected {LAYER_LABELS[layer]} size</Label>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => setTextScale((v) => Math.max(20, v - 5))}
+                    onClick={() => {
+                      if (!active) return;
+                      const current = getLayerTextScale(active, layer);
+                      update(
+                        active.id,
+                        setLayerTextScale(active, layer, current - 0.05),
+                      );
+                    }}
                   >
                     <Minus className="size-3" />
                   </Button>
+                  <Input
+                    type="number"
+                    min={20}
+                    max={300}
+                    step={5}
+                    value={Math.round(getLayerTextScale(active, layer) * 100)}
+                    onChange={(e) => {
+                      if (!active) return;
+                      const value = Math.min(
+                        300,
+                        Math.max(20, Number(e.target.value) || 100),
+                      );
+                      update(
+                        active.id,
+                        setLayerTextScale(active, layer, value / 100),
+                      );
+                    }}
+                    className="h-7 w-20"
+                  />
                   <Button
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => setTextScale((v) => Math.min(300, v + 5))}
+                    onClick={() => {
+                      if (!active) return;
+                      const current = getLayerTextScale(active, layer);
+                      update(
+                        active.id,
+                        setLayerTextScale(active, layer, current + 0.05),
+                      );
+                    }}
                   >
                     <Plus className="size-3" />
                   </Button>
                 </div>
               </div>
-              {num(textScale, setTextScale, 20, 300, 5)}
+              {num(
+                Math.round(getLayerTextScale(active, layer) * 100),
+                (n) => {
+                  if (!active) return;
+                  update(
+                    active.id,
+                    setLayerTextScale(active, layer, n / 100),
+                  );
+                },
+                20,
+                300,
+                5,
+              )}
               <p className="mt-1 text-xs text-muted-foreground">
-                Scales every line at once. Text keeps the same position on every shirt size.
+                Applies only to this person and the selected text line. Other
+                people keep their own text size.
               </p>
             </div>
+
+            {layer === "name" && (
+              <div className="grid gap-2">
+                <Label>Name orientation</Label>
+                <Select
+                  value={L.orientation}
+                  onValueChange={(v) =>
+                    setStyle((s) =>
+                      setLayerOrientation(
+                        s,
+                        "name",
+                        v as "horizontal" | "vertical",
+                      ),
+                    )
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="horizontal">Horizontal</SelectItem>
+                    <SelectItem value="vertical">Vertical</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Vertical stacks the name from top to bottom. It does not
+                  change the orientation of other text lines.
+                </p>
+              </div>
+            )}
 
             <div>
               <Label>Horizontal — {L.xPct.toFixed(0)}%</Label>
