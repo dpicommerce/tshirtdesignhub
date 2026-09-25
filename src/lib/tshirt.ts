@@ -13,7 +13,11 @@ export type PersonRow = {
   textScale?: number;
 };
 
-export type LayerKey = "name" | "game" | "size" | "phone";
+export type LayerKey =
+  | "name"
+  | "game"
+  | "size"
+  | "phone";
 
 export const LAYER_KEYS: LayerKey[] = [
   "name",
@@ -22,14 +26,19 @@ export const LAYER_KEYS: LayerKey[] = [
   "phone",
 ];
 
-export const LAYER_LABELS: Record<LayerKey, string> = {
+export const LAYER_LABELS: Record<
+  LayerKey,
+  string
+> = {
   name: "Name",
   game: "Game",
   size: "Size",
   phone: "Phone",
 };
 
-export type FillMode = "solid" | "gradient";
+export type FillMode =
+  | "solid"
+  | "gradient";
 
 export type TextEffect =
   | "none"
@@ -82,7 +91,8 @@ export type LayerStyle = {
   opacity: number;
 };
 
-export type DesignStyle = Record<LayerKey, LayerStyle>;
+export type DesignStyle =
+  Record<LayerKey, LayerStyle>;
 
 export type SizeSpec = {
   size: string;
@@ -124,34 +134,97 @@ export const BASE_SIZE: SizeSpec = {
   h: 32,
 };
 
-export type HandType = "half" | "full";
+export type HandType =
+  | "half"
+  | "full";
 
-export const HAND_OPTIONS: { label: string; value: HandType }[] = [
-  { label: "Half Hand", value: "half" },
-  { label: "Full Hand", value: "full" },
+export const HAND_OPTIONS: {
+  label: string;
+  value: HandType;
+}[] = [
+  {
+    label: "Half Hand",
+    value: "half",
+  },
+  {
+    label: "Full Hand",
+    value: "full",
+  },
 ];
 
-export const MIN_DPI = 72;
-export const BASE_DPI = 200;
-export const MAX_DPI = 300;
+/* ============================================================
+ * EXPORT SETTINGS
+ * ============================================================ */
 
-export const SIZES = DEFAULT_SIZE_CHART.map((s) => s.size);
+/**
+ * Minimum supported export DPI.
+ *
+ * 72 DPI keeps exported files small.
+ */
+export const MIN_DPI = 72;
+
+/**
+ * Default export DPI.
+ *
+ * Changed from 200 to 100 to substantially
+ * reduce exported pixel dimensions and file size.
+ */
+export const BASE_DPI = 100;
+
+/**
+ * Maximum export DPI.
+ *
+ * Limited to 150 so accidental 300 DPI exports
+ * do not create extremely large files.
+ */
+export const MAX_DPI = 150;
+
+/**
+ * Default compressed image quality.
+ *
+ * 0.70 gives a good balance between quality
+ * and file size for WebP/JPEG.
+ */
+export const DEFAULT_EXPORT_QUALITY = 0.70;
+
+/**
+ * Default export format.
+ *
+ * WebP normally gives the smallest file.
+ */
+export type ExportFormat =
+  | "webp"
+  | "jpeg"
+  | "png";
+
+export const DEFAULT_EXPORT_FORMAT: ExportFormat =
+  "webp";
+
+export const SIZES =
+  DEFAULT_SIZE_CHART.map(
+    (s) => s.size,
+  );
 
 export function findSize(
   chart: SizeSpec[],
   size: string,
 ): SizeSpec {
   return (
-    chart.find((s) => s.size === size) ??
-    BASE_SIZE
+    chart.find(
+      (s) => s.size === size,
+    ) ?? BASE_SIZE
   );
 }
 
 export function sizeLabel(
   s: string,
-  chart: SizeSpec[] = DEFAULT_SIZE_CHART,
+  chart: SizeSpec[] =
+    DEFAULT_SIZE_CHART,
 ) {
-  const spec = chart.find((x) => x.size === s);
+  const spec =
+    chart.find(
+      (x) => x.size === s,
+    );
 
   return spec
     ? `${spec.size} — ${spec.w}×${spec.h}"`
@@ -165,39 +238,113 @@ export type FontOption = {
 };
 
 export const FONT_OPTIONS: FontOption[] = [
-  { label: "Anton", value: "Anton" },
-  { label: "Bebas Neue", value: "'Bebas Neue'" },
-  { label: "Oswald", value: "Oswald" },
-  { label: "Archivo Black", value: "'Archivo Black'" },
-  { label: "Teko", value: "Teko" },
-  { label: "Rubik Mono One", value: "'Rubik Mono One'" },
-  { label: "Playfair Display", value: "'Playfair Display'" },
-  { label: "Pacifico", value: "Pacifico" },
-  { label: "Caveat", value: "Caveat" },
-  { label: "Barlow Condensed", value: "'Barlow Condensed'" },
-  { label: "Bungee", value: "Bungee" },
-  { label: "Monoton", value: "Monoton" },
-  { label: "Righteous", value: "Righteous" },
-  { label: "Alfa Slab One", value: "'Alfa Slab One'" },
-  { label: "Black Ops One", value: "'Black Ops One'" },
-  { label: "Press Start 2P", value: "'Press Start 2P'" },
-  { label: "Lobster", value: "Lobster" },
-  { label: "Great Vibes", value: "'Great Vibes'" },
-  { label: "Permanent Marker", value: "'Permanent Marker'" },
-  { label: "Staatliches", value: "Staatliches" },
-  { label: "Russo One", value: "'Russo One'" },
-  { label: "Orbitron", value: "Orbitron" },
-  { label: "Faster One", value: "'Faster One'" },
-  { label: "Creepster", value: "Creepster" },
+  {
+    label: "Anton",
+    value: "Anton",
+  },
+  {
+    label: "Bebas Neue",
+    value: "'Bebas Neue'",
+  },
+  {
+    label: "Oswald",
+    value: "Oswald",
+  },
+  {
+    label: "Archivo Black",
+    value: "'Archivo Black'",
+  },
+  {
+    label: "Teko",
+    value: "Teko",
+  },
+  {
+    label: "Rubik Mono One",
+    value: "'Rubik Mono One'",
+  },
+  {
+    label: "Playfair Display",
+    value: "'Playfair Display'",
+  },
+  {
+    label: "Pacifico",
+    value: "Pacifico",
+  },
+  {
+    label: "Caveat",
+    value: "Caveat",
+  },
+  {
+    label: "Barlow Condensed",
+    value: "'Barlow Condensed'",
+  },
+  {
+    label: "Bungee",
+    value: "Bungee",
+  },
+  {
+    label: "Monoton",
+    value: "Monoton",
+  },
+  {
+    label: "Righteous",
+    value: "Righteous",
+  },
+  {
+    label: "Alfa Slab One",
+    value: "'Alfa Slab One'",
+  },
+  {
+    label: "Black Ops One",
+    value: "'Black Ops One'",
+  },
+  {
+    label: "Press Start 2P",
+    value: "'Press Start 2P'",
+  },
+  {
+    label: "Lobster",
+    value: "Lobster",
+  },
+  {
+    label: "Great Vibes",
+    value: "'Great Vibes'",
+  },
+  {
+    label: "Permanent Marker",
+    value: "'Permanent Marker'",
+  },
+  {
+    label: "Staatliches",
+    value: "Staatliches",
+  },
+  {
+    label: "Russo One",
+    value: "Russo One",
+  },
+  {
+    label: "Orbitron",
+    value: "Orbitron",
+  },
+  {
+    label: "Faster One",
+    value: "'Faster One'",
+  },
+  {
+    label: "Creepster",
+    value: "Creepster",
+  },
 ];
 
 const baseLayer: LayerStyle = {
   enabled: true,
+
   fontFamily: "Anton",
   weight: 400,
   uppercase: true,
 
   sizePct: 9,
+
   widthPct: 100,
   heightPct: 100,
 
@@ -206,9 +353,11 @@ const baseLayer: LayerStyle = {
 
   rotation: 0,
   curve: 0,
+
   letterSpacingPct: 2,
 
-  // Default text: yellow -> red gradient
+  // Default text:
+  // yellow -> red gradient
   fill: "gradient",
   colorHex: "#facc15",
 
@@ -226,50 +375,61 @@ const baseLayer: LayerStyle = {
   opacity: 100,
 };
 
-// Reference layout defaults:
-// Name      -> centered at ~17% height
-// Number    -> large centered number at ~43.3% height
-// Size      -> small centered text at ~92% height
-// Phone     -> disabled by default
-//
-// Supplied reference also contains "VOLLEY BALL" at ~69% height.
-// This source file has no subtitle/static-text layer, so that text
-// must be positioned in the component that renders it.
+/* ============================================================
+ * DEFAULT DESIGN
+ * ============================================================ */
+
 export const defaultStyle: DesignStyle = {
   name: {
     ...baseLayer,
-    // Reference: SAKTHI is centered around 17% height.
+
+    // Reference:
+    // centered near 17% height
     sizePct: 10,
+
     xPct: 50,
     yPct: 17,
   },
 
   game: {
     ...baseLayer,
+
     enabled: true,
-    // Reference: 07 occupies the large center area.
+
+    // Large center number
     sizePct: 34,
+
     xPct: 50,
     yPct: 43.3,
   },
 
   size: {
     ...baseLayer,
-    // Small size label near the bottom.
+
+    // Small size text near bottom
     sizePct: 3,
+
     xPct: 50,
     yPct: 92,
   },
 
   phone: {
     ...baseLayer,
+
     enabled: false,
+
     sizePct: 3,
+
     xPct: 50,
     yPct: 82,
+
     uppercase: false,
   },
 };
+
+/* ============================================================
+ * TEXT PRESETS
+ * ============================================================ */
 
 export const TEXT_PRESETS: {
   label: string;
@@ -277,12 +437,15 @@ export const TEXT_PRESETS: {
 }[] = [
   {
     label: "Yellow Red",
+
     patch: {
       fill: "gradient",
       colorHex: "#facc15",
+
       gradFrom: "#ffff00",
       gradTo: "#ff0000",
       gradAngle: 90,
+
       outlineWidth: 0,
       effect: "none",
     },
@@ -290,11 +453,14 @@ export const TEXT_PRESETS: {
 
   {
     label: "Sunset gradient",
+
     patch: {
       fill: "gradient",
+
       gradFrom: "#ffff00",
       gradTo: "#ff0000",
       gradAngle: 90,
+
       outlineWidth: 0,
       effect: "none",
     },
@@ -302,13 +468,17 @@ export const TEXT_PRESETS: {
 
   {
     label: "Chrome",
+
     patch: {
       fill: "gradient",
+
       gradFrom: "#f8fafc",
       gradTo: "#64748b",
       gradAngle: 90,
+
       outlineHex: "#0f172a",
       outlineWidth: 1.5,
+
       effect: "emboss",
       effectHex: "#ffffff",
       effectStrength: 2,
@@ -317,11 +487,15 @@ export const TEXT_PRESETS: {
 
   {
     label: "Varsity outline",
+
     patch: {
       fill: "solid",
+
       colorHex: "#111111",
+
       outlineHex: "#ffffff",
       outlineWidth: 3,
+
       effect: "extrude",
       effectHex: "#ef4444",
       effectStrength: 4,
@@ -330,10 +504,14 @@ export const TEXT_PRESETS: {
 
   {
     label: "Neon glow",
+
     patch: {
       fill: "solid",
+
       colorHex: "#f0fdfa",
+
       outlineWidth: 0,
+
       effect: "glow",
       effectHex: "#22d3ee",
       effectStrength: 8,
@@ -342,13 +520,17 @@ export const TEXT_PRESETS: {
 
   {
     label: "3D pop",
+
     patch: {
       fill: "gradient",
+
       gradFrom: "#ffffff",
       gradTo: "#cbd5e1",
       gradAngle: 90,
+
       outlineHex: "#0f172a",
       outlineWidth: 2,
+
       effect: "extrude",
       effectHex: "#0f172a",
       effectStrength: 6,
@@ -357,14 +539,20 @@ export const TEXT_PRESETS: {
 
   {
     label: "Arched team",
+
     patch: {
       curve: 40,
       letterSpacingPct: 4,
+
       outlineWidth: 2,
       outlineHex: "#000000",
     },
   },
 ];
+
+/* ============================================================
+ * TEXT
+ * ============================================================ */
 
 export function layerText(
   key: LayerKey,
@@ -380,12 +568,17 @@ export function layerText(
           ? sizeLabel(row.size)
           : row.phone;
 
-  const text = (raw ?? "").trim();
+  const text =
+    (raw ?? "").trim();
 
   return l.uppercase
     ? text.toUpperCase()
     : text;
 }
+
+/* ============================================================
+ * TEXT MEASUREMENT
+ * ============================================================ */
 
 function measureTracked(
   ctx: CanvasRenderingContext2D,
@@ -406,6 +599,10 @@ function measureTracked(
   );
 }
 
+/* ============================================================
+ * TEXT PAINTING
+ * ============================================================ */
+
 function paintChars(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -414,24 +611,40 @@ function paintChars(
   curveDeg: number,
   stroke: boolean,
 ) {
-  if (!text) return;
+  if (!text) {
+    return;
+  }
 
   /*
    * Flat text
    */
-  if (Math.abs(curveDeg) < 0.5) {
-    let x = -total / 2;
+  if (
+    Math.abs(curveDeg) < 0.5
+  ) {
+    let x =
+      -total / 2;
 
     for (const ch of text) {
-      const cw = ctx.measureText(ch).width;
+      const cw =
+        ctx.measureText(ch).width;
 
       if (stroke) {
-        ctx.strokeText(ch, x, 0);
+        ctx.strokeText(
+          ch,
+          x,
+          0,
+        );
       }
 
-      ctx.fillText(ch, x, 0);
+      ctx.fillText(
+        ch,
+        x,
+        0,
+      );
 
-      x += cw + tracking;
+      x +=
+        cw +
+        tracking;
     }
 
     return;
@@ -441,10 +654,15 @@ function paintChars(
    * Curved text
    */
   const sweep =
-    (Math.abs(curveDeg) * Math.PI) / 180;
+    (Math.abs(curveDeg) *
+      Math.PI) /
+    180;
 
   const safeSweep =
-    Math.max(0.01, sweep);
+    Math.max(
+      0.01,
+      sweep,
+    );
 
   const radius =
     Math.max(
@@ -452,24 +670,32 @@ function paintChars(
       1,
     );
 
-  const up = curveDeg > 0;
+  const up =
+    curveDeg > 0;
 
-  let angle = -safeSweep / 2;
+  let angle =
+    -safeSweep / 2;
 
   for (const ch of text) {
     const cw =
-      ctx.measureText(ch).width;
+      ctx.measureText(ch)
+        .width;
 
     const step =
-      (cw + tracking) / radius;
+      (cw + tracking) /
+      radius;
 
     ctx.save();
 
     if (up) {
-      ctx.translate(0, radius);
+      ctx.translate(
+        0,
+        radius,
+      );
 
       ctx.rotate(
-        angle + step / 2,
+        angle +
+          step / 2,
       );
 
       ctx.translate(
@@ -483,7 +709,8 @@ function paintChars(
       );
 
       ctx.rotate(
-        -(angle + step / 2),
+        -(angle +
+          step / 2),
       );
 
       ctx.translate(
@@ -512,6 +739,10 @@ function paintChars(
   }
 }
 
+/* ============================================================
+ * DRAW TEXT LAYER
+ * ============================================================ */
+
 function drawLayer(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -522,29 +753,24 @@ function drawLayer(
   oy: number,
   scale: number,
 ) {
-  if (!text) return;
-  if (!l.enabled) return;
+  if (!text) {
+    return;
+  }
 
-  /*
-   * IMPORTANT:
-   *
-   * Font size is based on the ACTUAL OUTPUT ARTWORK WIDTH.
-   *
-   * Therefore:
-   *
-   * 12" shirt → smaller text
-   * 22" shirt → normal text
-   * 30" shirt → larger text
-   *
-   * This keeps the physical design proportional.
-   */
+  if (!l.enabled) {
+    return;
+  }
+
   const fontPx =
     (l.sizePct / 100) *
     w *
     scale;
 
   const safeFontPx =
-    Math.max(1, fontPx);
+    Math.max(
+      1,
+      fontPx,
+    );
 
   const font =
     `${l.weight} ${safeFontPx}px ${l.fontFamily}, sans-serif`;
@@ -552,6 +778,7 @@ function drawLayer(
   ctx.save();
 
   ctx.font = font;
+
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
@@ -578,39 +805,53 @@ function drawLayer(
       tracking,
     );
 
-  /*
-   * Text position is relative to the
-   * selected physical artwork area.
-   */
   ctx.translate(
-    ox + (l.xPct / 100) * w,
-    oy + (l.yPct / 100) * h,
+    ox +
+      (l.xPct / 100) *
+        w,
+    oy +
+      (l.yPct / 100) *
+        h,
   );
 
   if (l.rotation) {
     ctx.rotate(
-      (l.rotation * Math.PI) / 180,
+      (l.rotation *
+        Math.PI) /
+        180,
     );
   }
 
-  const sx = Math.max(
-    0.1,
-    Math.min(
-      4,
-      (l.widthPct ?? 100) / 100,
-    ),
-  );
+  const sx =
+    Math.max(
+      0.1,
+      Math.min(
+        4,
+        (l.widthPct ??
+          100) /
+          100,
+      ),
+    );
 
-  const sy = Math.max(
-    0.1,
-    Math.min(
-      4,
-      (l.heightPct ?? 100) / 100,
-    ),
-  );
+  const sy =
+    Math.max(
+      0.1,
+      Math.min(
+        4,
+        (l.heightPct ??
+          100) /
+          100,
+      ),
+    );
 
-  if (sx !== 1 || sy !== 1) {
-    ctx.scale(sx, sy);
+  if (
+    sx !== 1 ||
+    sy !== 1
+  ) {
+    ctx.scale(
+      sx,
+      sy,
+    );
   }
 
   const strokeW =
@@ -618,22 +859,29 @@ function drawLayer(
     safeFontPx *
     2;
 
-  ctx.lineWidth = strokeW;
-  ctx.strokeStyle = l.outlineHex;
+  ctx.lineWidth =
+    strokeW;
+
+  ctx.strokeStyle =
+    l.outlineHex;
 
   const unit =
     safeFontPx / 100;
 
   /*
-   * Extrude effect
+   * Extrude
    */
-  if (l.effect === "extrude") {
-    const depth = Math.max(
-      1,
-      Math.round(
-        l.effectStrength * 3,
-      ),
-    );
+  if (
+    l.effect === "extrude"
+  ) {
+    const depth =
+      Math.max(
+        1,
+        Math.round(
+          l.effectStrength *
+            3,
+        ),
+      );
 
     ctx.fillStyle =
       l.effectHex;
@@ -664,17 +912,21 @@ function drawLayer(
   }
 
   /*
-   * Emboss effect
+   * Emboss
    */
-  if (l.effect === "emboss") {
+  if (
+    l.effect === "emboss"
+  ) {
     ctx.fillStyle =
       l.effectHex;
 
     ctx.save();
 
     ctx.translate(
-      -l.effectStrength * unit,
-      -l.effectStrength * unit,
+      -l.effectStrength *
+        unit,
+      -l.effectStrength *
+        unit,
     );
 
     paintChars(
@@ -692,7 +944,9 @@ function drawLayer(
   /*
    * Shadow
    */
-  if (l.effect === "shadow") {
+  if (
+    l.effect === "shadow"
+  ) {
     ctx.shadowColor =
       l.effectHex;
 
@@ -713,7 +967,9 @@ function drawLayer(
   /*
    * Glow
    */
-  if (l.effect === "glow") {
+  if (
+    l.effect === "glow"
+  ) {
     ctx.shadowColor =
       l.effectHex;
 
@@ -726,9 +982,12 @@ function drawLayer(
   /*
    * Fill
    */
-  if (l.fill === "gradient") {
+  if (
+    l.fill === "gradient"
+  ) {
     const angle =
-      (l.gradAngle * Math.PI) /
+      (l.gradAngle *
+        Math.PI) /
       180;
 
     const rx =
@@ -778,33 +1037,10 @@ function drawLayer(
   ctx.restore();
 }
 
-/**
- * Renders the design into the EXACT requested
- * physical canvas dimensions.
- *
- * IMPORTANT CHANGE:
- *
- * Previous implementation used:
- *
- *   Math.min(...)
- *
- * which FIT the artwork inside the target canvas
- * and therefore created transparent margins.
- *
- * This implementation uses:
- *
- *   Math.max(...)
- *
- * and clips the artwork to the target canvas.
- *
- * Result:
- *
- * 12 × 17" → completely filled 12 × 17" canvas
- * 22 × 32" → completely filled 22 × 32" canvas
- * 30 × 32" → completely filled 30 × 32" canvas
- *
- * No transparent outer frame is created.
- */
+/* ============================================================
+ * RENDER SHIRT
+ * ============================================================ */
+
 export function renderShirt(
   canvas: HTMLCanvasElement,
   img: HTMLImageElement,
@@ -829,31 +1065,34 @@ export function renderShirt(
     return;
   }
 
-  const w = Math.max(
-    1,
-    Math.round(outputWidth),
-  );
+  const w =
+    Math.max(
+      1,
+      Math.round(
+        outputWidth,
+      ),
+    );
 
-  /*
-   * If explicit height is supplied,
-   * ALWAYS use it.
-   */
-  const h = Math.max(
-    1,
-    Math.round(
-      outputHeight ??
-        (w * sourceH) /
-          sourceW,
-    ),
-  );
+  const h =
+    Math.max(
+      1,
+      Math.round(
+        outputHeight ??
+          (w * sourceH) /
+            sourceW,
+      ),
+    );
 
   canvas.width = w;
   canvas.height = h;
 
   const ctx =
-    canvas.getContext("2d", {
-      alpha: true,
-    });
+    canvas.getContext(
+      "2d",
+      {
+        alpha: true,
+      },
+    );
 
   if (!ctx) {
     throw new Error(
@@ -875,20 +1114,10 @@ export function renderShirt(
   );
 
   /*
-   * ============================================================
-   * SIZE-AWARE ARTWORK RENDERING
-   * ============================================================
+   * COVER rendering.
    *
-   * We use COVER instead of FIT.
-   *
-   * COVER:
-   *   - fills entire output
-   *   - preserves aspect ratio
-   *   - crops only the excess
-   *   - creates NO transparent outer border
-   *
-   * This is especially important because the size chart
-   * contains different physical aspect ratios.
+   * Fills the complete canvas
+   * without transparent borders.
    */
   const scale =
     Math.max(
@@ -908,9 +1137,6 @@ export function renderShirt(
   const drawY =
     (h - drawH) / 2;
 
-  /*
-   * Clip to exact physical canvas.
-   */
   ctx.save();
 
   ctx.beginPath();
@@ -935,38 +1161,24 @@ export function renderShirt(
   ctx.restore();
 
   /*
-   * ============================================================
-   * TEXT AREA
-   * ============================================================
-   *
-   * Text is positioned against the FULL selected size.
-   *
-   * Example:
-   *
-   * (S)36 = 20 × 31"
-   * (L)40 = 22 × 32"
-   * (XXL)44 = 24 × 32"
-   *
-   * Therefore every size gets proportional text placement.
+   * Text scale.
    */
   const ts =
     Math.max(
       0.2,
       Math.min(
         3,
-        Number.isFinite(textScale)
+        Number.isFinite(
+          textScale,
+        )
           ? textScale
           : 1,
       ),
     );
 
   /*
-   * Use the entire physical output area.
-   *
-   * This is intentional.
-   *
-   * Text must scale with the selected size,
-   * not with the original uploaded image dimensions.
+   * Text uses complete
+   * physical output area.
    */
   const artworkX = 0;
   const artworkY = 0;
@@ -976,7 +1188,8 @@ export function renderShirt(
   for (
     const key of LAYER_KEYS
   ) {
-    const l = style[key];
+    const l =
+      style[key];
 
     if (!l.enabled) {
       continue;
@@ -1006,21 +1219,22 @@ export function renderShirt(
   }
 }
 
-/**
- * Returns exact pixel dimensions for
- * physical size + DPI.
- */
+/* ============================================================
+ * DPI / PIXEL CALCULATION
+ * ============================================================ */
+
 export function sheetPixels(
   spec: SizeSpec,
   dpi: number,
 ) {
-  const d = Math.min(
-    MAX_DPI,
-    Math.max(
-      MIN_DPI,
-      Math.round(dpi),
-    ),
-  );
+  const d =
+    Math.min(
+      MAX_DPI,
+      Math.max(
+        MIN_DPI,
+        Math.round(dpi),
+      ),
+    );
 
   return {
     w: Math.max(
@@ -1041,10 +1255,13 @@ export function sheetPixels(
   };
 }
 
-/**
- * Safe filename slug.
- */
-export function slug(v: string) {
+/* ============================================================
+ * FILENAME
+ * ============================================================ */
+
+export function slug(
+  v: string,
+) {
   return (
     v
       .trim()
@@ -1101,7 +1318,8 @@ const CRC_TABLE =
 function crc32(
   bytes: Uint8Array,
 ) {
-  let c = 0xffffffff;
+  let c =
+    0xffffffff;
 
   for (
     let i = 0;
@@ -1125,8 +1343,6 @@ function crc32(
 
 /**
  * Adds/replaces PNG pHYs metadata.
- *
- * DPI is preserved as physical print resolution.
  */
 export async function pngWithDpi(
   blob: Blob,
@@ -1154,12 +1370,11 @@ export async function pngWithDpi(
   /*
    * PNG pHYs chunk:
    *
-   * length  = 9
-   * type    = pHYs
+   * length = 9
+   * type   = pHYs
    * X ppm
    * Y ppm
-   * unit    = 1 metre
-   * CRC
+   * unit   = 1 metre
    */
   const chunk =
     new Uint8Array(
@@ -1208,9 +1423,6 @@ export async function pngWithDpi(
     ),
   );
 
-  /*
-   * Search PNG chunks.
-   */
   let pos = 8;
   let insertAt = 8;
 
@@ -1243,12 +1455,14 @@ export async function pngWithDpi(
       12 +
       len;
 
-    if (type === "IHDR") {
+    if (
+      type === "IHDR"
+    ) {
       insertAt = next;
     }
 
     /*
-     * Replace an existing pHYs.
+     * Replace existing pHYs.
      */
     if (
       type === "pHYs"
@@ -1336,3 +1550,278 @@ export async function pngWithDpi(
     },
   );
 }
+
+/* ============================================================
+ * COMPRESSED EXPORT
+ * ============================================================ */
+
+/**
+ * Export canvas as WebP/JPEG/PNG.
+ *
+ * WebP is the default because it generally produces
+ * significantly smaller files than PNG.
+ */
+export async function exportCompressedImage(
+  canvas: HTMLCanvasElement,
+  dpi: number,
+  format: ExportFormat =
+    DEFAULT_EXPORT_FORMAT,
+  quality: number =
+    DEFAULT_EXPORT_QUALITY,
+): Promise<Blob> {
+  const safeDpi =
+    Math.min(
+      MAX_DPI,
+      Math.max(
+        MIN_DPI,
+        Math.round(dpi),
+      ),
+    );
+
+  const safeQuality =
+    Math.max(
+      0.40,
+      Math.min(
+        0.95,
+        Number.isFinite(
+          quality,
+        )
+          ? quality
+          : DEFAULT_EXPORT_QUALITY,
+      ),
+    );
+
+  /*
+   * PNG is lossless.
+   *
+   * Quality does not apply to PNG.
+   */
+  if (
+    format === "png"
+  ) {
+    const blob =
+      await canvasToBlob(
+        canvas,
+        "image/png",
+      );
+
+    return pngWithDpi(
+      blob,
+      safeDpi,
+    );
+  }
+
+  /*
+   * WebP.
+   *
+   * Falls back to JPEG if the
+   * browser does not support WebP.
+   */
+  if (
+    format === "webp"
+  ) {
+    const webp =
+      await canvasToBlob(
+        canvas,
+        "image/webp",
+        safeQuality,
+      );
+
+    /*
+     * Some browsers may return
+     * PNG when WebP isn't supported.
+     */
+    if (
+      webp.type ===
+      "image/webp"
+    ) {
+      return webp;
+    }
+
+    return canvasToBlob(
+      canvas,
+      "image/jpeg",
+      safeQuality,
+    );
+  }
+
+  /*
+   * JPEG.
+   */
+  return canvasToBlob(
+    canvas,
+    "image/jpeg",
+    safeQuality,
+  );
+}
+
+/* ============================================================
+ * CANVAS TO BLOB
+ * ============================================================ */
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  mimeType: string,
+  quality?: number,
+): Promise<Blob> {
+  return new Promise(
+    (
+      resolve,
+      reject,
+    ) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(
+              new Error(
+                "Unable to create export image.",
+              ),
+            );
+
+            return;
+          }
+
+          resolve(blob);
+        },
+        mimeType,
+        quality,
+      );
+    },
+  );
+}
+
+/* ============================================================
+ * TARGET FILE SIZE EXPORT
+ * ============================================================ */
+
+/**
+ * Export an image while attempting to stay below
+ * the requested maximum file size.
+ *
+ * Example:
+ *
+ *   const blob =
+ *     await exportToMaxSize(
+ *       canvas,
+ *       100,
+ *       2,
+ *     );
+ *
+ * 2 = maximum target size in MB.
+ *
+ * WebP quality is progressively reduced until
+ * the target is reached or the minimum quality
+ * limit is reached.
+ */
+export async function exportToMaxSize(
+  canvas: HTMLCanvasElement,
+  dpi: number,
+  maxSizeMB = 2,
+  format: ExportFormat =
+    DEFAULT_EXPORT_FORMAT,
+): Promise<Blob> {
+  const targetBytes =
+    Math.max(
+      0.25,
+      maxSizeMB,
+    ) *
+    1024 *
+    1024;
+
+  /*
+   * PNG cannot be quality-compressed.
+   *
+   * Return PNG directly.
+   */
+  if (
+    format === "png"
+  ) {
+    return exportCompressedImage(
+      canvas,
+      dpi,
+      "png",
+    );
+  }
+
+  /*
+   * Try several quality levels.
+   */
+  const qualities = [
+    0.80,
+    0.70,
+    0.60,
+    0.50,
+    0.45,
+    0.40,
+  ];
+
+  let bestBlob: Blob | null =
+    null;
+
+  for (
+    const quality of qualities
+  ) {
+    const blob =
+      await exportCompressedImage(
+        canvas,
+        dpi,
+        format,
+        quality,
+      );
+
+    bestBlob = blob;
+
+    if (
+      blob.size <=
+      targetBytes
+    ) {
+      return blob;
+    }
+  }
+
+  /*
+   * If the requested target cannot be
+   * reached, return the smallest version
+   * generated.
+   */
+  return (
+    bestBlob ??
+    exportCompressedImage(
+      canvas,
+      dpi,
+      format,
+      0.40,
+    )
+  );
+}
+
+/* ============================================================
+ * RECOMMENDED EXPORT
+ * ============================================================ */
+
+/**
+ * Recommended export for the application.
+ *
+ * Defaults:
+ *
+ *   DPI      = 100
+ *   Format   = WebP
+ *   Quality  = 0.70
+ *   Max size = 2 MB
+ *
+ * This gives substantially smaller files
+ * than the old 200 DPI PNG export.
+ */
+export async function exportDesign(
+  canvas: HTMLCanvasElement,
+  dpi: number = BASE_DPI,
+  maxSizeMB = 2,
+): Promise<Blob> {
+  return exportToMaxSize(
+    canvas,
+    dpi,
+    maxSizeMB,
+    "webp",
+  );
+}
+
