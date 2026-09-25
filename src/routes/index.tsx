@@ -86,6 +86,23 @@ export const Route = createFileRoute("/")({
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
+type ClipArtItem = {
+  id: string;
+  name: string;
+  src: string;
+  image: HTMLImageElement;
+  xPct: number;
+  yPct: number;
+  sizePct: number;
+  rotation: number;
+  opacity: number;
+  widthPct: number;
+  heightPct: number;
+  flipX: boolean;
+  flipY: boolean;
+  enabled: boolean;
+};
+
 const starterRows: PersonRow[] = [
   { id: uid(), name: "Alex Carter", phone: "98765 43210", game: "10", hand: "half", size: "(L)40", qty: 1 },
   { id: uid(), name: "Priya Nair", phone: "", game: "7", hand: "half", size: "(M)38", qty: 1 },
@@ -109,7 +126,7 @@ export function Index() {
   const [dpi, setDpi] = useState(BASE_DPI);
   const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
-
+  const [clipArts, setClipArts] = useState<ClipArtItem[]>([]);\n  const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);\n
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
@@ -138,6 +155,63 @@ export function Index() {
       alive = false;
     };
   }, []);
+
+  const activeClipArt = useMemo(
+    () => clipArts.find((c) => c.id === activeClipArtId) ?? clipArts[0] ?? null,
+    [clipArts, activeClipArtId],
+  );
+
+  const updateClipArt = (id: string, patch: Partial<ClipArtItem>) =>
+    setClipArts((items) => items.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+
+  const loadClipArt = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose a PNG, JPG, WEBP or other image clip-art file.");
+      return;
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result));
+        fr.onerror = () => reject(new Error("read failed"));
+        fr.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      const item: ClipArtItem = {
+        id: uid(), name: file.name.replace(/\\.[^.]+$/, "") || "Clip art", src: dataUrl,
+        image, xPct: 50, yPct: 50, sizePct: 30, rotation: 0, opacity: 100,
+        widthPct: 100, heightPct: 100, flipX: false, flipY: false, enabled: true,
+      };
+      setClipArts((items) => [...items, item]);
+      setActiveClipArtId(item.id);
+      toast.success(`Clip art "${item.name}" added`);
+    } catch {
+      toast.error("That clip-art image could not be loaded.");
+    }
+  }, []);
+
+  const drawClipArts = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    for (const c of clipArts) {
+      if (!c.enabled || c.opacity <= 0 || !c.image.complete) continue;
+      const sw = c.image.naturalWidth || c.image.width;
+      const sh = c.image.naturalHeight || c.image.height;
+      if (!sw || !sh) continue;
+      const targetW = Math.max(1, (c.sizePct / 100) * w);
+      const targetH = Math.max(1, targetW * (sh / sw) * (c.heightPct / 100));
+      const finalW = targetW * (c.widthPct / 100);
+      const cx = (c.xPct / 100) * w;
+      const cy = (c.yPct / 100) * h;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, c.opacity / 100));
+      ctx.translate(cx, cy);
+      ctx.rotate((c.rotation * Math.PI) / 180);
+      ctx.scale(c.flipX ? -1 : 1, c.flipY ? -1 : 1);
+      ctx.drawImage(c.image, -finalW / 2, -targetH / 2, finalW, targetH);
+      ctx.restore();
+    }
+  };
 
   const loadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -784,8 +858,62 @@ export function Index() {
           </section>
         </div>
 
-        {/* RIGHT: text design */}
+        {/* RIGHT: clip art + text design */}
         <aside className="panel h-fit p-4">
+          <section className="mb-6 rounded-md border border-border/70 bg-secondary/30 p-3">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg">Clip arts</h2>
+                <p className="text-xs text-muted-foreground">Upload multiple clip arts and adjust each one independently.</p>
+              </div>
+              <label>
+                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  void Promise.all(files.map(loadClipArt));
+                  e.currentTarget.value = "";
+                }} />
+                <span className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-input bg-secondary px-3 text-sm font-medium hover:bg-muted">
+                  <ImagePlus className="size-4" /> Add clip art
+                </span>
+              </label>
+            </div>
+            {clipArts.length > 0 && (
+              <div className="grid gap-2">
+                {clipArts.map((c) => (
+                  <button key={c.id} type="button" onClick={() => setActiveClipArtId(c.id)}
+                    className={`flex items-center gap-2 rounded-md border p-2 text-left ${c.id === activeClipArtId ? "border-primary bg-secondary" : "border-border/60"}`}>
+                    <img src={c.src} alt="" className="size-10 rounded object-contain bg-background" />
+                    <span className="min-w-0 flex-1 truncate text-xs">{c.name}</span>
+                    <span className="text-xs text-muted-foreground">{c.enabled ? "On" : "Off"}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {activeClipArt && (
+              <div className="mt-3 grid gap-3 border-t border-border/60 pt-3">
+                <div className="flex items-center justify-between"><Label>Enable clip art</Label><Switch checked={activeClipArt.enabled} onCheckedChange={(v) => updateClipArt(activeClipArt.id, {enabled:v})} /></div>
+                <div><Label>Size — {activeClipArt.sizePct.toFixed(0)}%</Label>{num(activeClipArt.sizePct, (n) => updateClipArt(activeClipArt.id,{sizePct:n}), 2, 100, 1)}</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>X — {activeClipArt.xPct.toFixed(0)}%</Label>{num(activeClipArt.xPct, (n) => updateClipArt(activeClipArt.id,{xPct:n}), 0, 100, .5)}</div>
+                  <div><Label>Y — {activeClipArt.yPct.toFixed(0)}%</Label>{num(activeClipArt.yPct, (n) => updateClipArt(activeClipArt.id,{yPct:n}), 0, 100, .5)}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label>Width — {activeClipArt.widthPct.toFixed(0)}%</Label>{num(activeClipArt.widthPct, (n) => updateClipArt(activeClipArt.id,{widthPct:n}), 20, 300, 1)}</div>
+                  <div><Label>Height — {activeClipArt.heightPct.toFixed(0)}%</Label>{num(activeClipArt.heightPct, (n) => updateClipArt(activeClipArt.id,{heightPct:n}), 20, 300, 1)}</div>
+                </div>
+                <div><Label>Rotation — {activeClipArt.rotation}°</Label>{num(activeClipArt.rotation, (n) => updateClipArt(activeClipArt.id,{rotation:n}), -180, 180, 1)}</div>
+                <div><Label>Opacity — {activeClipArt.opacity}%</Label>{num(activeClipArt.opacity, (n) => updateClipArt(activeClipArt.id,{opacity:n}), 0, 100, 1)}</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant={activeClipArt.flipX ? "default" : "secondary"} onClick={() => updateClipArt(activeClipArt.id,{flipX:!activeClipArt.flipX})}>Flip X</Button>
+                  <Button variant={activeClipArt.flipY ? "default" : "secondary"} onClick={() => updateClipArt(activeClipArt.id,{flipY:!activeClipArt.flipY})}>Flip Y</Button>
+                </div>
+                <Button variant="destructive" onClick={() => { setClipArts((items)=>items.filter((x)=>x.id!==activeClipArt.id)); setActiveClipArtId(null); }}>Remove clip art</Button>
+              </div>
+            )}
+          </section>
+          <h2 className="mb-3 flex items-center gap-2 text-lg">
+            <Type className="size-4 text-primary" /> Text design
+          </h2>
           <h2 className="mb-3 flex items-center gap-2 text-lg">
             <Type className="size-4 text-primary" /> Text design
           </h2>
