@@ -967,16 +967,19 @@ export function renderShirt(
    * SIZE-AWARE ARTWORK RENDERING
    * ============================================================
    *
-   * FIT / CONTAIN mode:
-   *   - the COMPLETE uploaded image remains visible
-   *   - aspect ratio is preserved
-   *   - the image is never cropped or zoomed beyond its ratio
-   *   - the image is centered inside the exact selected size
+   * COVER / FILL mode:
+   *   - fills the COMPLETE selected canvas
+   *   - preserves the source aspect ratio
+   *   - creates NO transparent background area
+   *   - centers the image automatically
    *
-   * This is the required behavior when changing sizes.
+   * Because different shirt sizes have different aspect ratios,
+   * preserving the image ratio while filling the whole canvas
+   * necessarily means a small amount of the outer image can be
+   * cropped on some sizes.
    */
   const scale =
-    Math.min(
+    Math.max(
       w / sourceW,
       h / sourceH,
     );
@@ -994,10 +997,13 @@ export function renderShirt(
     (h - drawH) / 2;
 
   /*
-   * Draw the COMPLETE image.
-   * No clipping is used because we never want
-   * any part of the source image cropped.
+   * Clip exactly to the selected output size so the image
+   * reaches every edge without creating transparent margins.
    */
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
   ctx.drawImage(
     img,
     drawX,
@@ -1005,6 +1011,7 @@ export function renderShirt(
     drawW,
     drawH,
   );
+  ctx.restore();
 
   /*
    * ============================================================
