@@ -97,7 +97,13 @@ export function Index() {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<PersonRow[]>(starterRows);
   const [activeId, setActiveId] = useState<string>(starterRows[0]!.id);
-  const [style, setStyle] = useState<DesignStyle>(defaultStyle);
+  const [style, setStyle] = useState<DesignStyle>(() => ({
+    ...defaultStyle,
+    name: { ...defaultStyle.name, sizePct: 2, yPct: 98 },
+    game: { ...defaultStyle.game, sizePct: 2, yPct: 98 },
+    size: { ...defaultStyle.size, sizePct: 2, yPct: 98 },
+    phone: { ...defaultStyle.phone, sizePct: 2, yPct: 98 },
+  }));
   const [layer, setLayer] = useState<LayerKey>("name");
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
