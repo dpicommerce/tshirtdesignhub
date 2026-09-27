@@ -180,7 +180,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
       image.src = dataUrl;
       await image.decode();
       const item: ClipArtItem = {
-        id: uid(), name: file.name.replace(/\\.[^.]+$/, "") || "Clip art", src: dataUrl,
+        id: uid(), name: file.name.replace(/\.[^.]+$/, "") || "Clip art", src: dataUrl,
         image, xPct: 50, yPct: 50, sizePct: 30, rotation: 0, opacity: 100,
         widthPct: 100, heightPct: 100, flipX: false, flipY: false, enabled: true,
       };
@@ -262,6 +262,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     const ratio = spec.h / spec.w;
     const canvas = previewRef.current;
     renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), 1);
+    drawClipArts(canvas.getContext("2d")!, canvas.width, canvas.height);
     if (!showGrid) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -294,7 +295,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     for (let i = 5; i < spec.w; i += 5) ctx.fillText(`${i}"`, i * xStep + 4, 4);
     for (let j = 5; j < spec.h; j += 5) ctx.fillText(`${j}"`, 4, j * yStep + 4);
     ctx.restore();
-  }, [img, active, style, chart, fontsReady, showGrid]);
+  }, [img, active, style, chart, fontsReady, showGrid, clipArts]);
 
   const stepRow = (dir: 1 | -1) => {
     const idx = rows.findIndex((r) => r.id === active?.id);
@@ -471,9 +472,11 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
     renderShirt(c, img!, row, style, px.w, px.h, 1);
+    const ctx = c.getContext("2d");
+    if (ctx) drawClipArts(ctx, c.width, c.height);
     // WebP keeps the exported files much smaller than PNG while
     // preserving the exact pixel dimensions selected by the DPI.
-    return await exportDesign(c, px.dpi, 2);
+    return await exportDesign(c, px.dpi, 0.82);
   };
 
 
@@ -911,9 +914,6 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
               </div>
             )}
           </section>
-          <h2 className="mb-3 flex items-center gap-2 text-lg">
-            <Type className="size-4 text-primary" /> Text design
-          </h2>
           <h2 className="mb-3 flex items-center gap-2 text-lg">
             <Type className="size-4 text-primary" /> Text design
           </h2>
