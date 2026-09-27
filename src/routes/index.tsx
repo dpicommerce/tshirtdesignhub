@@ -126,8 +126,8 @@ export function Index() {
   const [dpi, setDpi] = useState(BASE_DPI);
   const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
-  const [clipArts, setClipArts] = useState<ClipArtItem[]>([]);\n  const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);\n
-  const [bulk, setBulk] = useState("");
+const [clipArts, setClipArts] = useState<ClipArtItem[]>([]);
+const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
   const previewRef = useRef<HTMLCanvasElement>(null);
