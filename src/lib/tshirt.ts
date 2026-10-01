@@ -4,38 +4,33 @@ export type PersonRow = {
   id: string;
   name: string;
   phone: string;
-  game: string;
-  hand: HandType;
+  number: string;
   size: string;
   qty: number;
 
-  // Optional overall text scale for backwards compatibility.
+  // Individual text scale for this design
   textScale?: number;
-
-  // Individual text scale per row/image and per text layer.
-  // Changing one person/image does not change other images.
-  textScaleByLayer?: Partial<Record<LayerKey, number>>;
 };
 
-export type LayerKey = "name" | "game" | "size" | "phone";
+export type LayerKey = "name" | "number" | "size" | "phone";
 
 export const LAYER_KEYS: LayerKey[] = [
   "name",
-  "game",
+  "number",
   "size",
   "phone",
 ];
 
 export const LAYER_LABELS: Record<LayerKey, string> = {
   name: "Name",
-  game: "Game",
+  number: "Number",
   size: "Size",
   phone: "Phone",
 };
 
 export type FillMode = "solid" | "gradient";
 
-export type TextOrientation = "horizontal" | "vertical";
+export type TextDirection = "horizontal" | "vertical-up" | "vertical-down";
 
 export type TextEffect =
   | "none"
@@ -50,8 +45,8 @@ export type LayerStyle = {
   weight: number;
   uppercase: boolean;
 
-  /** Text direction. Vertical stacks characters top-to-bottom. */
-  orientation: TextOrientation;
+  /** Text writing direction/orientation */
+  direction: TextDirection;
 
   /** Font size as % of artwork width */
   sizePct: number;
@@ -93,6 +88,24 @@ export type LayerStyle = {
 
 export type DesignStyle = Record<LayerKey, LayerStyle>;
 
+export type ClipArt = {
+  id: string;
+  src: string;
+  image?: HTMLImageElement;
+  xPct: number;
+  yPct: number;
+  widthPct: number;
+  heightPct: number;
+  rotation: number;
+  opacity: number;
+  flipX: boolean;
+  flipY: boolean;
+  shadow: boolean;
+  shadowBlur: number;
+  shadowOpacity: number;
+};
+
+
 export type SizeSpec = {
   size: string;
   w: number;
@@ -133,16 +146,8 @@ export const BASE_SIZE: SizeSpec = {
   h: 32,
 };
 
-export type HandType = "half" | "full";
-
-export const HAND_OPTIONS: { label: string; value: HandType }[] = [
-  { label: "Half Hand", value: "half" },
-  { label: "Full Hand", value: "full" },
-];
-
-export const MIN_DPI = 72;
-export const BASE_DPI = 100;
-export const MAX_DPI = 150;
+export const BASE_DPI = 200;
+export const MAX_DPI = 300;
 
 export const SIZES = DEFAULT_SIZE_CHART.map((s) => s.size);
 
@@ -150,8 +155,12 @@ export function findSize(
   chart: SizeSpec[],
   size: string,
 ): SizeSpec {
+  const raw = String(size ?? "").trim();
+  const normalized = raw.replace(/^\([^)]*\)\s*/, "");
+
   return (
-    chart.find((s) => s.size === size) ??
+    chart.find((s) => s.size === raw) ??
+    chart.find((s) => s.size === normalized) ??
     BASE_SIZE
   );
 }
@@ -205,7 +214,7 @@ const baseLayer: LayerStyle = {
   fontFamily: "Anton",
   weight: 400,
   uppercase: true,
-  orientation: "horizontal",
+  direction: "horizontal",
 
   sizePct: 9,
   widthPct: 100,
@@ -249,34 +258,34 @@ export const defaultStyle: DesignStyle = {
   name: {
     ...baseLayer,
     // Reference: SAKTHI is centered around 17% height.
-    sizePct: 10,
+    sizePct: 8,
     xPct: 50,
-    yPct: 17,
+    yPct: 19,
   },
 
-  game: {
+  number: {
     ...baseLayer,
     enabled: true,
     // Reference: 07 occupies the large center area.
-    sizePct: 34,
+    sizePct: 38,
     xPct: 50,
-    yPct: 43.3,
+    yPct: 46,
   },
 
   size: {
     ...baseLayer,
     // Small size label near the bottom.
-    sizePct: 3,
+    sizePct: 1.5,
     xPct: 50,
-    yPct: 92,
+    yPct: 99.5,
   },
 
   phone: {
     ...baseLayer,
     enabled: false,
-    sizePct: 3,
+    sizePct: 10,
     xPct: 50,
-    yPct: 82,
+    yPct: 68,
     uppercase: false,
   },
 };
@@ -384,8 +393,8 @@ export function layerText(
   const raw =
     key === "name"
       ? row.name
-      : key === "game"
-        ? row.game
+      : key === "number"
+        ? row.number
         : key === "size"
           ? sizeLabel(row.size)
           : row.phone;
@@ -423,30 +432,8 @@ function paintChars(
   total: number,
   curveDeg: number,
   stroke: boolean,
-  orientation: TextOrientation = "horizontal",
-  verticalLineHeight?: number,
 ) {
   if (!text) return;
-
-  /*
-   * Optional vertical text. Each character is placed on its own line,
-   * centered around the layer origin. Curve is intentionally ignored.
-   */
-  if (orientation === "vertical") {
-    const lineHeight = Math.max(1, verticalLineHeight ?? ctx.measureText("M").width);
-    const step = lineHeight + tracking;
-    const totalHeight = Math.max(0, text.length * step - tracking);
-    let y = -totalHeight / 2;
-
-    for (const ch of text) {
-      if (stroke) {
-        ctx.strokeText(ch, 0, y);
-      }
-      ctx.fillText(ch, 0, y);
-      y += step;
-    }
-    return;
-  }
 
   /*
    * Flat text
@@ -584,7 +571,7 @@ function drawLayer(
   ctx.save();
 
   ctx.font = font;
-  ctx.textAlign = l.orientation === "vertical" ? "center" : "left";
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
   ctx.lineJoin = "round";
@@ -610,12 +597,6 @@ function drawLayer(
       tracking,
     );
 
-  const verticalTotal =
-    Math.max(
-      safeFontPx,
-      text.length * (safeFontPx + tracking) - tracking,
-    );
-
   /*
    * Text position is relative to the
    * selected physical artwork area.
@@ -625,9 +606,19 @@ function drawLayer(
     oy + (l.yPct / 100) * h,
   );
 
-  if (l.rotation) {
+  const directionRotation =
+    l.direction === "vertical-up"
+      ? -90
+      : l.direction === "vertical-down"
+        ? 90
+        : 0;
+
+  const effectiveRotation =
+    l.rotation + directionRotation;
+
+  if (effectiveRotation) {
     ctx.rotate(
-      (l.rotation * Math.PI) / 180,
+      (effectiveRotation * Math.PI) / 180,
     );
   }
 
@@ -695,8 +686,6 @@ function drawLayer(
         total,
         l.curve,
         false,
-        l.orientation,
-        safeFontPx,
       );
 
       ctx.restore();
@@ -724,8 +713,6 @@ function drawLayer(
       total,
       l.curve,
       false,
-      l.orientation,
-      safeFontPx,
     );
 
     ctx.restore();
@@ -773,23 +760,14 @@ function drawLayer(
       (l.gradAngle * Math.PI) /
       180;
 
-    const gradientWidth =
-      l.orientation === "vertical"
-        ? safeFontPx
-        : total;
-    const gradientHeight =
-      l.orientation === "vertical"
-        ? verticalTotal
-        : safeFontPx;
-
     const rx =
       (Math.cos(angle) *
-        gradientWidth) /
+        total) /
       2;
 
     const ry =
       (Math.sin(angle) *
-        gradientHeight) /
+        safeFontPx) /
       2;
 
     const gradient =
@@ -824,8 +802,6 @@ function drawLayer(
     total,
     l.curve,
     strokeW > 0,
-    l.orientation,
-    safeFontPx,
   );
 
   ctx.restore();
@@ -835,62 +811,68 @@ function drawLayer(
  * Renders the design into the EXACT requested
  * physical canvas dimensions.
  *
- * IMPORTANT:
+ * IMPORTANT CHANGE:
  *
- * The uploaded image is rendered using FIT / CONTAIN.
+ * Previous implementation used:
+ *
+ *   Math.min(...)
+ *
+ * which FIT the artwork inside the target canvas
+ * and therefore created transparent margins.
+ *
+ * This implementation uses:
+ *
+ *   Math.max(...)
+ *
+ * and clips the artwork to the target canvas.
  *
  * Result:
  *
- * 12 × 17" → complete image visible inside 12 × 17"
- * 22 × 32" → complete image visible inside 22 × 32"
- * 30 × 32" → complete image visible inside 30 × 32"
+ * 12 × 17" → completely filled 12 × 17" canvas
+ * 22 × 32" → completely filled 22 × 32" canvas
+ * 30 × 32" → completely filled 30 × 32" canvas
  *
- * The source image is never cropped.
- * Any unused area is preserved as transparent space.
+ * No transparent outer frame is created.
  */
-export function getLayerTextScale(
-  row: PersonRow,
-  key: LayerKey,
+function drawClipArt(
+  ctx: CanvasRenderingContext2D,
+  art: ClipArt,
+  w: number,
+  h: number,
 ) {
-  const value = row.textScaleByLayer?.[key];
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.max(0.2, Math.min(3, value));
+  if (!art?.src) return;
+
+  const image = art.image;
+  if (!image || !image.complete || image.naturalWidth <= 0) return;
+
+  const cx = (art.xPct / 100) * w;
+  const cy = (art.yPct / 100) * h;
+  const targetW = Math.max(1, (art.widthPct / 100) * w);
+  const targetH = Math.max(1, (art.heightPct / 100) * h);
+  const iw = image.naturalWidth || image.width;
+  const ih = image.naturalHeight || image.height;
+  if (!iw || !ih) return;
+
+  // Preserve clip-art aspect ratio inside the requested box.
+  const fit = Math.min(targetW / iw, targetH / ih);
+  const dw = iw * fit;
+  const dh = ih * fit;
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, art.opacity / 100));
+  ctx.translate(cx, cy);
+  ctx.rotate((art.rotation * Math.PI) / 180);
+  ctx.scale(art.flipX ? -1 : 1, art.flipY ? -1 : 1);
+
+  if (art.shadow) {
+    ctx.shadowColor = `rgba(0,0,0,${Math.max(0, Math.min(1, art.shadowOpacity / 100))})`;
+    ctx.shadowBlur = Math.max(0, art.shadowBlur);
+    ctx.shadowOffsetX = art.shadowBlur * 0.35;
+    ctx.shadowOffsetY = art.shadowBlur * 0.35;
   }
 
-  if (typeof row.textScale === "number" && Number.isFinite(row.textScale)) {
-    return Math.max(0.2, Math.min(3, row.textScale));
-  }
-
-  return 1;
-}
-
-/** Set only one layer's scale for one row/image. */
-export function setLayerTextScale(
-  row: PersonRow,
-  key: LayerKey,
-  scale: number,
-): PersonRow {
-  return {
-    ...row,
-    textScaleByLayer: {
-      ...(row.textScaleByLayer ?? {}),
-      [key]: Math.max(0.2, Math.min(3, scale)),
-    },
-  };
-}
-
-export function setLayerOrientation(
-  style: DesignStyle,
-  key: LayerKey,
-  orientation: TextOrientation,
-): DesignStyle {
-  return {
-    ...style,
-    [key]: {
-      ...style[key],
-      orientation,
-    },
-  };
+  ctx.drawImage(image, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
 }
 
 export function renderShirt(
@@ -901,6 +883,7 @@ export function renderShirt(
   outputWidth: number,
   outputHeight?: number,
   textScale = 1,
+  clipArts: ClipArt[] = [],
 ) {
   const sourceW =
     img.naturalWidth ||
@@ -964,54 +947,52 @@ export function renderShirt(
 
   /*
    * ============================================================
-   * SIZE-AWARE ARTWORK RENDERING
+   * SIZE-AWARE ARTWORK RESIZE — NO ZOOM / NO CROP
    * ============================================================
    *
-   * COVER / FILL mode:
-   *   - fills the COMPLETE selected canvas
-   *   - preserves the source aspect ratio
-   *   - creates NO transparent background area
-   *   - centers the image automatically
+   * The uploaded artwork is resized directly to the exact
+   * selected output canvas dimensions.
    *
-   * Because different shirt sizes have different aspect ratios,
-   * preserving the image ratio while filling the whole canvas
-   * necessarily means a small amount of the outer image can be
-   * cropped on some sizes.
+   * IMPORTANT:
+   *   - Do NOT use Math.max() here.
+   *   - Do NOT use COVER scaling.
+   *   - Do NOT crop the source image.
+   *   - The complete uploaded image is always drawn.
+   *   - Each selected shirt size gets its own exact pixel size.
+   *
+   * This means changing 40 -> 44 -> 48 resizes the complete
+   * artwork to the new canvas instead of zooming into it.
+   * The image fills the complete output area, so there is no
+   * transparent outer frame.
    */
-  const scale =
-    Math.max(
-      w / sourceW,
-      h / sourceH,
-    );
+  const drawX = 0;
+  const drawY = 0;
+  const drawW = w;
+  const drawH = h;
 
-  const drawW =
-    sourceW * scale;
-
-  const drawH =
-    sourceH * scale;
-
-  const drawX =
-    (w - drawW) / 2;
-
-  const drawY =
-    (h - drawH) / 2;
-
-  /*
-   * Clip exactly to the selected output size so the image
-   * reaches every edge without creating transparent margins.
-   */
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, w, h);
-  ctx.clip();
   ctx.drawImage(
     img,
+    0,
+    0,
+    sourceW,
+    sourceH,
     drawX,
     drawY,
     drawW,
     drawH,
   );
-  ctx.restore();
+
+  /*
+   * ============================================================
+   * CLIP ART
+   * ============================================================
+   * Clip art is drawn after the uploaded base artwork and before text.
+   * This keeps it editable independently while allowing text to remain
+   * on top of the clip art.
+   */
+  for (const art of clipArts) {
+    drawClipArt(ctx, art, w, h);
+  }
 
   /*
    * ============================================================
@@ -1028,9 +1009,7 @@ export function renderShirt(
    *
    * Therefore every size gets proportional text placement.
    */
-  // textScale is retained as a backwards-compatible overall fallback.
-  // Each layer now uses its own row/image scale below.
-  const legacyTs =
+  const ts =
     Math.max(
       0.2,
       Math.min(
@@ -1074,11 +1053,6 @@ export function renderShirt(
       continue;
     }
 
-    const layerScale =
-      row.textScaleByLayer?.[key] ??
-      row.textScale ??
-      legacyTs;
-
     drawLayer(
       ctx,
       text,
@@ -1087,7 +1061,7 @@ export function renderShirt(
       artworkH,
       artworkX,
       artworkY,
-      Math.max(0.2, Math.min(3, Number.isFinite(layerScale) ? layerScale : 1)),
+      ts,
     );
   }
 }
@@ -1103,7 +1077,7 @@ export function sheetPixels(
   const d = Math.min(
     MAX_DPI,
     Math.max(
-      MIN_DPI,
+      BASE_DPI,
       Math.round(dpi),
     ),
   );
@@ -1227,7 +1201,7 @@ export async function pngWithDpi(
     Math.min(
       MAX_DPI,
       Math.max(
-        MIN_DPI,
+        BASE_DPI,
         Math.round(dpi),
       ),
     );
@@ -1420,127 +1394,5 @@ export async function pngWithDpi(
     {
       type: "image/png",
     },
-  );
-}
-
-/* ============================================================
- * COMPRESSED EXPORT
- * ============================================================ */
-
-export type ExportFormat =
-  | "webp"
-  | "jpeg"
-  | "png";
-
-export const DEFAULT_EXPORT_FORMAT: ExportFormat = "webp";
-export const DEFAULT_EXPORT_QUALITY = 0.70;
-
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  type: string,
-  quality?: number,
-): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error("Unable to create export image."));
-        return;
-      }
-      resolve(blob);
-    }, type, quality);
-  });
-}
-
-/**
- * Compressed export. WebP is preferred because it normally produces
- * much smaller files than PNG while preserving good visual quality.
- */
-export async function exportCompressedImage(
-  canvas: HTMLCanvasElement,
-  dpi: number = BASE_DPI,
-  format: ExportFormat = DEFAULT_EXPORT_FORMAT,
-  quality: number = DEFAULT_EXPORT_QUALITY,
-): Promise<Blob> {
-  const safeQuality = Math.max(
-    0.40,
-    Math.min(0.95, quality),
-  );
-
-  if (format === "png") {
-    return canvasToBlob(canvas, "image/png");
-  }
-
-  if (format === "webp") {
-    const webp = await canvasToBlob(
-      canvas,
-      "image/webp",
-      safeQuality,
-    );
-
-    if (webp.type === "image/webp") {
-      return webp;
-    }
-  }
-
-  return canvasToBlob(
-    canvas,
-    "image/jpeg",
-    safeQuality,
-  );
-}
-
-/**
- * Attempts to keep the exported file below maxSizeMB by progressively
- * lowering WebP/JPEG quality.
- */
-export async function exportToMaxSize(
-  canvas: HTMLCanvasElement,
-  dpi: number = BASE_DPI,
-  maxSizeMB = 2,
-  format: ExportFormat = "webp",
-): Promise<Blob> {
-  if (format === "png") {
-    return exportCompressedImage(canvas, dpi, "png");
-  }
-
-  const targetBytes =
-    Math.max(0.25, maxSizeMB) * 1024 * 1024;
-
-  const qualities = [0.80, 0.70, 0.60, 0.50, 0.45, 0.40];
-  let smallest: Blob | null = null;
-
-  for (const quality of qualities) {
-    const blob = await exportCompressedImage(
-      canvas,
-      dpi,
-      format,
-      quality,
-    );
-
-    if (!smallest || blob.size < smallest.size) {
-      smallest = blob;
-    }
-
-    if (blob.size <= targetBytes) {
-      return blob;
-    }
-  }
-
-  return smallest!;
-}
-
-/**
- * Recommended application export: 100 DPI, WebP, approximately 2 MB target.
- */
-export async function exportDesign(
-  canvas: HTMLCanvasElement,
-  dpi: number = BASE_DPI,
-  maxSizeMB = 2,
-): Promise<Blob> {
-  return exportToMaxSize(
-    canvas,
-    dpi,
-    maxSizeMB,
-    "webp",
   );
 }
