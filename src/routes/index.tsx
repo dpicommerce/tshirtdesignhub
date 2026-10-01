@@ -10,8 +10,11 @@ import {
   Grid3x3,
   ImagePlus,
   Loader2,
+  LogIn,
+  LogOut,
   Minus,
   Plus,
+
 
   Ruler,
   Trash2,
@@ -57,7 +60,11 @@ import {
   type PersonRow,
   type SizeSpec,
 } from "@/lib/tshirt";
-
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { PayToExport } from "@/components/PayToExport";
+import { CLIPART_LIBRARY } from "@/lib/clipart-library";
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -137,6 +144,14 @@ export function Index() {
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
   const [clipArts, setClipArts] = useState<ClipArt[]>([]);
   const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [pending, setPending] = useState<"one" | "all" | null>(null);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
@@ -234,9 +249,9 @@ export function Index() {
       setActiveClipArtId(id);
       toast.success(`Clip art added — ${image.naturalWidth}×${image.naturalHeight}px`);
     } catch {
-      toast.error("That clip art could not be read.");
+      toast.error(`"${label}" could not be read.`);
     }
-  }, []);
+  };
 
   const activeClipArt = clipArts.find((a) => a.id === activeClipArtId) ?? null;
   const patchClipArt = (p: Partial<ClipArt>) => {

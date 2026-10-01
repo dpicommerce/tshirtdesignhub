@@ -151,16 +151,26 @@ export const MAX_DPI = 300;
 
 export const SIZES = DEFAULT_SIZE_CHART.map((s) => s.size);
 
-export function findSize(
-  chart: SizeSpec[],
-  size: string,
-): SizeSpec {
-  const raw = String(size ?? "").trim();
-  const normalized = raw.replace(/^\([^)]*\)\s*/, "");
+const LETTER_SIZES: Record<string, string> = {
+  XXS: "32", XS: "34", S: "36", M: "38", L: "40", XL: "42",
+  XXL: "44", "2XL": "44", XXXL: "46", "3XL": "46", "4XL": "48", "5XL": "50",
+};
 
+// Normalise "(L)40", "L-40", "40.0", " 40 ", "L", "xl" → comparable key
+function sizeKey(v: string): string {
+  const s = String(v ?? "").trim().toUpperCase();
+  const digits = s.match(/\d+(\.\d+)?/);
+  if (digits) return String(parseFloat(digits[0]));
+  const letters = s.replace(/[^A-Z0-9]/g, "");
+  return LETTER_SIZES[letters] ?? letters;
+}
+
+export function findSize(chart: SizeSpec[], size: string): SizeSpec {
+  const raw = String(size ?? "").trim();
+  const key = sizeKey(raw);
   return (
-    chart.find((s) => s.size === raw) ??
-    chart.find((s) => s.size === normalized) ??
+    chart.find((s) => s.size.trim() === raw) ??
+    chart.find((s) => sizeKey(s.size) === key) ??
     BASE_SIZE
   );
 }
@@ -213,7 +223,7 @@ const baseLayer: LayerStyle = {
   enabled: true,
   fontFamily: "Anton",
   weight: 400,
-  uppercase: true,
+  uppercase: false,
   direction: "horizontal",
 
   sizePct: 9,
