@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
@@ -17,8 +17,6 @@ import {
   Trash2,
   Type,
 } from "lucide-react";
-import justhueLogoSrc from "@/assets/justhue-logo.jpeg";
-const justhueLogo = { url: justhueLogoSrc };
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,35 +41,68 @@ import {
   LAYER_KEYS,
   LAYER_LABELS,
   MAX_DPI,
-  MIN_DPI,
-  HAND_OPTIONS,
   TEXT_PRESETS,
   defaultStyle,
   findSize,
   renderShirt,
-  exportDesign,
-  getLayerTextScale,
-  setLayerTextScale,
-  setLayerOrientation,
+  pngWithDpi,
   sheetPixels,
   slug,
   type DesignStyle,
+  type TextDirection,
+  type ClipArt,
   type FontOption,
-  type HandType,
   type LayerKey,
   type LayerStyle,
   type PersonRow,
   type SizeSpec,
 } from "@/lib/tshirt";
 
+
+class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error("JustHue render error:", error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <main style={{ minHeight: "100vh", padding: 32, background: "#111", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
+          <h1 style={{ fontSize: 24, marginBottom: 12 }}>JustHue could not render</h1>
+          <p style={{ marginBottom: 12 }}>A runtime error occurred. The exact error is shown below:</p>
+          <pre style={{ whiteSpace: "pre-wrap", padding: 16, borderRadius: 8, background: "#222", color: "#ffb4b4", overflow: "auto" }}>
+            {this.state.error.message}{"\n\n"}{this.state.error.stack ?? ""}
+          </pre>
+        </main>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function SafeIndex() {
+  return (
+    <AppErrorBoundary>
+      <Index />
+    </AppErrorBoundary>
+  );
+}
+
 export const Route = createFileRoute("/")({
+  component: SafeIndex,
   head: () => ({
     meta: [
       { title: "JustHue — Bulk T-Shirt Print Sheet Generator" },
       {
         name: "description",
         content:
-          "Upload artwork and an Excel size chart, personalise names, games and phone lines, then export print-ready sheets at the exact inch size and DPI for every person.",
+          "Upload artwork and an Excel size chart, personalise names, numbers and phone lines, then export print-ready sheets at the exact inch size and DPI for every person.",
       },
       { property: "og:title", content: "JustHue — Bulk T-Shirt Print Sheets" },
       {
@@ -81,32 +112,15 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: Index,
+  
 });
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-type ClipArtItem = {
-  id: string;
-  name: string;
-  src: string;
-  image: HTMLImageElement;
-  xPct: number;
-  yPct: number;
-  sizePct: number;
-  rotation: number;
-  opacity: number;
-  widthPct: number;
-  heightPct: number;
-  flipX: boolean;
-  flipY: boolean;
-  enabled: boolean;
-};
-
 const starterRows: PersonRow[] = [
-  { id: uid(), name: "Alex Carter", phone: "98765 43210", game: "10", hand: "half", size: "(L)40", qty: 1 },
-  { id: uid(), name: "Priya Nair", phone: "", game: "7", hand: "half", size: "(M)38", qty: 1 },
-  { id: uid(), name: "Jordan Blake", phone: "91234 56780", game: "", hand: "full", size: "(XL)42", qty: 2 },
+  { id: uid(), name: "THIRUMAL", phone: "CRICKET", number: "10", size: "40", qty: 1 },
+  { id: uid(), name: "RAINBOW", phone: "KABADDI", number: "7", size: "38", qty: 1 },
+  { id: uid(), name: "SPORTS", phone: "VOLLEY BALL", number: "", size: "42", qty: 1 },
 ];
 
 export function Index() {
@@ -114,20 +128,17 @@ export function Index() {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<PersonRow[]>(starterRows);
   const [activeId, setActiveId] = useState<string>(starterRows[0]!.id);
-  const [style, setStyle] = useState<DesignStyle>(() => ({
-    ...defaultStyle,
-    name: { ...defaultStyle.name, sizePct: 2, yPct: 98 },
-    game: { ...defaultStyle.game, sizePct: 2, yPct: 98 },
-    size: { ...defaultStyle.size, sizePct: 2, yPct: 98 },
-    phone: { ...defaultStyle.phone, sizePct: 2, yPct: 98 },
-  }));
+  const [style, setStyle] = useState<DesignStyle>(defaultStyle);
   const [layer, setLayer] = useState<LayerKey>("name");
   const [chart, setChart] = useState<SizeSpec[]>(DEFAULT_SIZE_CHART);
   const [dpi, setDpi] = useState(BASE_DPI);
+  const [textScale, setTextScale] = useState(100);
   const [showGrid, setShowGrid] = useState(true);
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
-const [clipArts, setClipArts] = useState<ClipArtItem[]>([]);
-const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  const [bulk, setBulk] = useState("");
+  const [clipArts, setClipArts] = useState<ClipArt[]>([]);
+  const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);
+
+  const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
   const [fontsReady, setFontsReady] = useState(false);
   const previewRef = useRef<HTMLCanvasElement>(null);
@@ -142,10 +153,12 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     let alive = true;
     (async () => {
       try {
-        await Promise.all(
-          FONT_OPTIONS.map((f) => document.fonts.load(`400 64px ${f.value}`, "ABCDEFGabcdefg0123")),
-        );
-        await document.fonts.ready;
+        if (typeof document !== "undefined" && "fonts" in document) {
+          await Promise.all(
+            FONT_OPTIONS.map((f) => document.fonts.load(`400 64px ${f.value}`, "ABCDEFGabcdefg0123")),
+          );
+          await document.fonts.ready;
+        }
       } catch {
         /* noop */
       }
@@ -155,63 +168,6 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
       alive = false;
     };
   }, []);
-
-  const activeClipArt = useMemo(
-    () => clipArts.find((c) => c.id === activeClipArtId) ?? clipArts[0] ?? null,
-    [clipArts, activeClipArtId],
-  );
-
-  const updateClipArt = (id: string, patch: Partial<ClipArtItem>) =>
-    setClipArts((items) => items.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-
-  const loadClipArt = useCallback(async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose a PNG, JPG, WEBP or other image clip-art file.");
-      return;
-    }
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const fr = new FileReader();
-        fr.onload = () => resolve(String(fr.result));
-        fr.onerror = () => reject(new Error("read failed"));
-        fr.readAsDataURL(file);
-      });
-      const image = new Image();
-      image.src = dataUrl;
-      await image.decode();
-      const item: ClipArtItem = {
-        id: uid(), name: file.name.replace(/\.[^.]+$/, "") || "Clip art", src: dataUrl,
-        image, xPct: 50, yPct: 50, sizePct: 30, rotation: 0, opacity: 100,
-        widthPct: 100, heightPct: 100, flipX: false, flipY: false, enabled: true,
-      };
-      setClipArts((items) => [...items, item]);
-      setActiveClipArtId(item.id);
-      toast.success(`Clip art "${item.name}" added`);
-    } catch {
-      toast.error("That clip-art image could not be loaded.");
-    }
-  }, []);
-
-  const drawClipArts = (ctx: CanvasRenderingContext2D, w: number, h: number) => {
-    for (const c of clipArts) {
-      if (!c.enabled || c.opacity <= 0 || !c.image.complete) continue;
-      const sw = c.image.naturalWidth || c.image.width;
-      const sh = c.image.naturalHeight || c.image.height;
-      if (!sw || !sh) continue;
-      const targetW = Math.max(1, (c.sizePct / 100) * w);
-      const targetH = Math.max(1, targetW * (sh / sw) * (c.heightPct / 100));
-      const finalW = targetW * (c.widthPct / 100);
-      const cx = (c.xPct / 100) * w;
-      const cy = (c.yPct / 100) * h;
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, c.opacity / 100));
-      ctx.translate(cx, cy);
-      ctx.rotate((c.rotation * Math.PI) / 180);
-      ctx.scale(c.flipX ? -1 : 1, c.flipY ? -1 : 1);
-      ctx.drawImage(c.image, -finalW / 2, -targetH / 2, finalW, targetH);
-      ctx.restore();
-    }
-  };
 
   const loadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -238,6 +194,56 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     }
   }, []);
 
+  const loadClipArt = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose a PNG, JPG, WEBP or SVG clip art image.");
+      return;
+    }
+    try {
+      const src = await new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(String(fr.result));
+        fr.onerror = () => rej(new Error("read failed"));
+        fr.readAsDataURL(file);
+      });
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+      const id = uid();
+      const art: ClipArt = {
+        id,
+        src,
+        image,
+        xPct: 50,
+        yPct: 55,
+        widthPct: 28,
+        heightPct: 28,
+        rotation: 0,
+        opacity: 100,
+        flipX: false,
+        flipY: false,
+        shadow: false,
+        shadowBlur: 8,
+        shadowOpacity: 35,
+      };
+      setClipArts((items) => [...items, art]);
+      setActiveClipArtId(id);
+      toast.success(`Clip art added — ${image.naturalWidth}×${image.naturalHeight}px`);
+    } catch {
+      toast.error("That clip art could not be read.");
+    }
+  }, []);
+
+  const activeClipArt = clipArts.find((a) => a.id === activeClipArtId) ?? null;
+  const patchClipArt = (p: Partial<ClipArt>) => {
+    if (!activeClipArtId) return;
+    setClipArts((items) => items.map((a) => (a.id === activeClipArtId ? { ...a, ...p } : a)));
+  };
+  const removeClipArt = (id: string) => {
+    setClipArts((items) => items.filter((a) => a.id !== id));
+    setActiveClipArtId((current) => (current === id ? null : current));
+  };
+
   useEffect(() => {
     const el = dropRef.current;
     if (!el) return;
@@ -261,8 +267,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
     const canvas = previewRef.current;
-    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), 1);
-    drawClipArts(canvas.getContext("2d")!, canvas.width, canvas.height);
+    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100, clipArts);
     if (!showGrid) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -295,7 +300,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     for (let i = 5; i < spec.w; i += 5) ctx.fillText(`${i}"`, i * xStep + 4, 4);
     for (let j = 5; j < spec.h; j += 5) ctx.fillText(`${j}"`, 4, j * yStep + 4);
     ctx.restore();
-  }, [img, active, style, chart, fontsReady, showGrid, clipArts]);
+  }, [img, active, style, chart, textScale, fontsReady, showGrid, clipArts]);
 
   const stepRow = (dir: 1 | -1) => {
     const idx = rows.findIndex((r) => r.id === active?.id);
@@ -312,8 +317,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
       id: uid(),
       name: "",
       phone: "",
-      game: "",
-      hand: "half",
+      number: "",
       size: BASE_SIZE.size,
       qty: 1,
     };
@@ -334,15 +338,14 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
         return {
           id: uid(),
           name: p[0] ?? "",
-          game: p[1] ?? "",
-          hand: (p[2]?.toLowerCase().includes("full") ? "full" : "half") as HandType,
-          phone: p[3] ?? "",
-          size: p[4] || BASE_SIZE.size,
-          qty: Number(p[5]) > 0 ? Number(p[5]) : 1,
+          number: p[1] ?? "",
+          phone: p[2] ?? "",
+          size: p[3] || BASE_SIZE.size,
+          qty: Number(p[4]) > 0 ? Number(p[4]) : 1,
         };
       });
     if (!parsed.length) {
-      toast.error("Nothing to import — add lines like: Alex Carter, 10, half, 9876543210, (L)40, 1");
+      toast.error("Nothing to import — add lines like: Alex Carter, 10, 9876543210, (L)40, 1");
       return;
     }
     setRows(parsed);
@@ -385,7 +388,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
         return;
       }
       setChart(next);
-      if (res > 0) setDpi(Math.min(MAX_DPI, Math.max(MIN_DPI, res)));
+      if (res > 0) setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, res)));
       toast.success(`Size chart loaded — ${next.length} sizes`);
     } catch {
       toast.error("That spreadsheet could not be read.");
@@ -401,20 +404,17 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
         const size = pick(r, ["size"]) || BASE_SIZE.size;
         if (!name && !size) continue;
         const qty = Number(pick(r, ["qty", "quantity", "pcs"]));
-        const handRaw = pick(r, ["hand", "sleeve", "handtype"]).toLowerCase();
-        const hand: HandType = handRaw.includes("full") ? "full" : "half";
         next.push({
           id: uid(),
           name,
-          game: pick(r, ["game", "number", "no", "jerseyno"]),
-          hand,
+          number: pick(r, ["number", "no", "jerseyno"]),
           phone: pick(r, ["phone", "phoneno", "mobile", "contact"]),
           size,
           qty: qty > 0 ? qty : 1,
         });
       }
       if (!next.length) {
-        toast.error("No rows found — expected columns Name, Game, Hand, Phone, Size, Qty.");
+        toast.error("No rows found — expected columns Name, Number, Phone, Size, Qty.");
         return;
       }
       setRows(next);
@@ -443,7 +443,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     XLSX.utils.book_append_sheet(
       wb,
       XLSX.utils.json_to_sheet([
-        { Name: "Alex Carter", Game: 10, Hand: "Half Hand", Phone: "9876543210", Size: "(L)40", Qty: 1 },
+        { Name: "Alex Carter", Number: 10, Phone: "9876543210", Size: "(L)40", Qty: 1 },
       ]),
       "Names",
     );
@@ -471,14 +471,17 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h, 1);
-    const ctx = c.getContext("2d");
-    if (ctx) drawClipArts(ctx, c.width, c.height);
-    // WebP keeps the exported files much smaller than PNG while
-    // preserving the exact pixel dimensions selected by the DPI.
-    return await exportDesign(c, px.dpi, 0.82);
+    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100, clipArts);
+    const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
+    return await pngWithDpi(raw, px.dpi);
   };
 
+
+  const exportDateTime = () => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  };
 
   const download = (blob: Blob, filename: string) => {
     const a = document.createElement("a");
@@ -492,7 +495,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
     if (!img || !active) return;
     setBusy(true);
     try {
-      download(await renderBlob(active), `${slug(active.name)}-${slug(active.size)}.webp`);
+      download(await renderBlob(active), `${exportDateTime()}-${slug(active.name || active.number || "tshirt")}-${slug(active.size)}.png`);
     } finally {
       setBusy(false);
     }
@@ -500,7 +503,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
 
   const exportAll = async () => {
     if (!img) return;
-    const valid = rows.filter((r) => r.name.trim() || r.game.trim());
+    const valid = rows.filter((r) => r.name.trim() || r.number.trim());
     if (!valid.length) {
       toast.error("Add at least one name first.");
       return;
@@ -515,12 +518,12 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
         const blob = await renderBlob(r);
         const folder = zip.folder(`${slug(r.size)}-${spec.w}x${spec.h}in`) ?? zip;
         folder.file(
-          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.game)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.webp`,
+          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.number)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
           blob,
         );
       }
       const out = await zip.generateAsync({ type: "blob" });
-      download(out, `tshirt-prints-${sheetPixels(BASE_SIZE, dpi).dpi}dpi.zip`);
+      download(out, `tshirt-prints-${exportDateTime()}-${sheetPixels(BASE_SIZE, dpi).dpi}dpi.zip`);
       toast.success(`Exported ${valid.length} sheets at ${sheetPixels(BASE_SIZE, dpi).dpi} DPI`);
     } finally {
       setBusy(false);
@@ -548,11 +551,9 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
 
       <header className="border-b border-border/70">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-5 sm:px-6">
-          <img
-            src={justhueLogo.url}
-            alt="JustHue"
-            className="size-16 rounded-md bg-card object-contain sm:size-20"
-          />
+          <div className="flex size-16 items-center justify-center rounded-md bg-card text-sm font-black tracking-widest sm:size-20">
+            JH
+          </div>
           <div className="mr-auto">
             <h1 className="text-2xl leading-none tracking-wide sm:text-3xl">JUSTHUE</h1>
             <p className="text-xs text-muted-foreground">
@@ -567,11 +568,11 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
               <Input
                 id="dpi"
                 type="number"
-                min={MIN_DPI}
+                min={BASE_DPI}
                 max={MAX_DPI}
                 value={dpi}
                 onChange={(e) =>
-                  setDpi(Math.min(MAX_DPI, Math.max(MIN_DPI, Number(e.target.value) || MIN_DPI)))
+                  setDpi(Math.min(MAX_DPI, Math.max(BASE_DPI, Number(e.target.value) || BASE_DPI)))
                 }
                 className="h-7 w-20"
               />
@@ -651,9 +652,108 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
                 <ImagePlus className="size-8 text-primary" />
                 <p className="font-medium">Drop your t-shirt design here</p>
                 <p className="text-sm text-muted-foreground">
-                  Artwork is treated as a {BASE_SIZE.w}×{BASE_SIZE.h}" sheet at {BASE_DPI} DPI and
-                  rescaled to each size.
+                  Artwork is resized to the complete selected size at {BASE_DPI} DPI — no zoom and no cropping.
                 </p>
+              </div>
+            )}
+          </section>
+
+          {/* Clip art */}
+          <section className="panel p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg">Clip art</h2>
+                <p className="text-xs text-muted-foreground">Upload one or more clip arts and adjust each one independently.</p>
+              </div>
+              <label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="sr-only"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void loadClipArt(f);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                <span className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-input bg-secondary px-3 text-sm font-medium hover:bg-muted">
+                  <ImagePlus className="size-4" /> Upload clip art
+                </span>
+              </label>
+            </div>
+
+            {clipArts.length > 0 ? (
+              <div className="grid gap-2">
+                {clipArts.map((art, i) => (
+                  <div
+                    key={art.id}
+                    className={`flex items-center gap-2 rounded-md border p-2 ${art.id === activeClipArtId ? "border-primary bg-secondary" : "border-border"}`}
+                  >
+                    <button type="button" className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setActiveClipArtId(art.id)}>
+                      <img src={art.src} alt={`Clip art ${i + 1}`} className="size-10 rounded border object-contain bg-white" />
+                      <span className="truncate text-sm">Clip art {i + 1}</span>
+                    </button>
+                    <Button variant="ghost" size="icon" onClick={() => removeClipArt(art.id)} title="Remove clip art">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-md border border-dashed border-border/80 bg-secondary/30 p-5 text-center text-sm text-muted-foreground">
+                No clip art uploaded yet.
+              </div>
+            )}
+
+            {activeClipArt && (
+              <div className="mt-4 grid gap-4 rounded-md border border-border/70 bg-secondary/30 p-3">
+                <div className="font-medium">Clip art adjustment</div>
+                <div>
+                  <Label>Horizontal — {activeClipArt.xPct.toFixed(0)}%</Label>
+                  {num(activeClipArt.xPct, (n) => patchClipArt({ xPct: n }), 0, 100, 0.5)}
+                </div>
+                <div>
+                  <Label>Vertical (up / down) — {activeClipArt.yPct.toFixed(0)}%</Label>
+                  {num(activeClipArt.yPct, (n) => patchClipArt({ yPct: n }), 0, 100, 0.5)}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Width — {activeClipArt.widthPct.toFixed(0)}%</Label>
+                    {num(activeClipArt.widthPct, (n) => patchClipArt({ widthPct: n }), 1, 100, 1)}
+                  </div>
+                  <div>
+                    <Label>Height — {activeClipArt.heightPct.toFixed(0)}%</Label>
+                    {num(activeClipArt.heightPct, (n) => patchClipArt({ heightPct: n }), 1, 100, 1)}
+                  </div>
+                </div>
+                <div>
+                  <Label>Rotation — {activeClipArt.rotation}°</Label>
+                  {num(activeClipArt.rotation, (n) => patchClipArt({ rotation: n }), -180, 180, 1)}
+                </div>
+                <div>
+                  <Label>Opacity — {activeClipArt.opacity}%</Label>
+                  {num(activeClipArt.opacity, (n) => patchClipArt({ opacity: n }), 0, 100, 1)}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant={activeClipArt.flipX ? "default" : "secondary"} onClick={() => patchClipArt({ flipX: !activeClipArt.flipX })}>Flip horizontal</Button>
+                  <Button variant={activeClipArt.flipY ? "default" : "secondary"} onClick={() => patchClipArt({ flipY: !activeClipArt.flipY })}>Flip vertical</Button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="clip-shadow">Shadow</Label>
+                  <Switch id="clip-shadow" checked={activeClipArt.shadow} onCheckedChange={(v) => patchClipArt({ shadow: v })} />
+                </div>
+                {activeClipArt.shadow && (
+                  <>
+                    <div>
+                      <Label>Shadow strength — {activeClipArt.shadowBlur}</Label>
+                      {num(activeClipArt.shadowBlur, (n) => patchClipArt({ shadowBlur: n }), 0, 30, 1)}
+                    </div>
+                    <div>
+                      <Label>Shadow opacity — {activeClipArt.shadowOpacity}%</Label>
+                      {num(activeClipArt.shadowOpacity, (n) => patchClipArt({ shadowOpacity: n }), 0, 100, 1)}
+                    </div>
+                  </>
+                )}
               </div>
             )}
           </section>
@@ -687,7 +787,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
               <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
                 <span className="font-medium">Upload name list (.xlsx / .csv)</span>
                 <span className="text-xs text-muted-foreground">
-                  Columns: Name, Game, Hand, Phone, Size, Qty
+                  Columns: Name, Number, Phone, Size, Qty
                 </span>
                 <input
                   type="file"
@@ -744,15 +844,14 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[720px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
                     <th className="px-2 pb-1">Name on shirt</th>
-                    <th className="px-2 pb-1">Game</th>
-                    <th className="px-2 pb-1">Phone</th>
+                    <th className="px-2 pb-1">Number</th>
+                    <th className="px-2 pb-1">GAME</th>
                     <th className="px-2 pb-1">Size</th>
-                    <th className="px-2 pb-1">Hand</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
                   </tr>
@@ -774,10 +873,10 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
                       </td>
                       <td className="px-2 py-1">
                         <Input
-                          value={r.game}
+                          value={r.number}
                           placeholder="10"
                           className="w-20"
-                          onChange={(e) => update(r.id, { game: e.target.value })}
+                          onChange={(e) => update(r.id, { number: e.target.value })}
                         />
                       </td>
                       <td className="px-2 py-1">
@@ -797,20 +896,6 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
                             {chart.map((s) => (
                               <SelectItem key={s.size} value={s.size}>
                                 {s.size} — {s.w}×{s.h}"
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-2 py-1">
-                        <Select value={r.hand} onValueChange={(v) => update(r.id, { hand: v as HandType })}>
-                          <SelectTrigger className="w-[125px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {HAND_OPTIONS.map((h) => (
-                              <SelectItem key={h.value} value={h.value}>
-                                {h.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -852,7 +937,7 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
                 rows={3}
                 value={bulk}
                 onChange={(e) => setBulk(e.target.value)}
-                placeholder={"Alex Carter, 10, half, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
+                placeholder={"Alex Carter, 10, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
               />
               <Button variant="secondary" onClick={importBulk} className="justify-self-start">
                 Replace roster with list
@@ -861,59 +946,8 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
           </section>
         </div>
 
-        {/* RIGHT: clip art + text design */}
+        {/* RIGHT: text design */}
         <aside className="panel h-fit p-4">
-          <section className="mb-6 rounded-md border border-border/70 bg-secondary/30 p-3">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div>
-                <h2 className="text-lg">Clip arts</h2>
-                <p className="text-xs text-muted-foreground">Upload multiple clip arts and adjust each one independently.</p>
-              </div>
-              <label>
-                <input type="file" accept="image/*" multiple className="sr-only" onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  void Promise.all(files.map(loadClipArt));
-                  e.currentTarget.value = "";
-                }} />
-                <span className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md border border-input bg-secondary px-3 text-sm font-medium hover:bg-muted">
-                  <ImagePlus className="size-4" /> Add clip art
-                </span>
-              </label>
-            </div>
-            {clipArts.length > 0 && (
-              <div className="grid gap-2">
-                {clipArts.map((c) => (
-                  <button key={c.id} type="button" onClick={() => setActiveClipArtId(c.id)}
-                    className={`flex items-center gap-2 rounded-md border p-2 text-left ${c.id === activeClipArtId ? "border-primary bg-secondary" : "border-border/60"}`}>
-                    <img src={c.src} alt="" className="size-10 rounded object-contain bg-background" />
-                    <span className="min-w-0 flex-1 truncate text-xs">{c.name}</span>
-                    <span className="text-xs text-muted-foreground">{c.enabled ? "On" : "Off"}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {activeClipArt && (
-              <div className="mt-3 grid gap-3 border-t border-border/60 pt-3">
-                <div className="flex items-center justify-between"><Label>Enable clip art</Label><Switch checked={activeClipArt.enabled} onCheckedChange={(v) => updateClipArt(activeClipArt.id, {enabled:v})} /></div>
-                <div><Label>Size — {activeClipArt.sizePct.toFixed(0)}%</Label>{num(activeClipArt.sizePct, (n) => updateClipArt(activeClipArt.id,{sizePct:n}), 2, 100, 1)}</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>X — {activeClipArt.xPct.toFixed(0)}%</Label>{num(activeClipArt.xPct, (n) => updateClipArt(activeClipArt.id,{xPct:n}), 0, 100, .5)}</div>
-                  <div><Label>Y — {activeClipArt.yPct.toFixed(0)}%</Label>{num(activeClipArt.yPct, (n) => updateClipArt(activeClipArt.id,{yPct:n}), 0, 100, .5)}</div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div><Label>Width — {activeClipArt.widthPct.toFixed(0)}%</Label>{num(activeClipArt.widthPct, (n) => updateClipArt(activeClipArt.id,{widthPct:n}), 20, 300, 1)}</div>
-                  <div><Label>Height — {activeClipArt.heightPct.toFixed(0)}%</Label>{num(activeClipArt.heightPct, (n) => updateClipArt(activeClipArt.id,{heightPct:n}), 20, 300, 1)}</div>
-                </div>
-                <div><Label>Rotation — {activeClipArt.rotation}°</Label>{num(activeClipArt.rotation, (n) => updateClipArt(activeClipArt.id,{rotation:n}), -180, 180, 1)}</div>
-                <div><Label>Opacity — {activeClipArt.opacity}%</Label>{num(activeClipArt.opacity, (n) => updateClipArt(activeClipArt.id,{opacity:n}), 0, 100, 1)}</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant={activeClipArt.flipX ? "default" : "secondary"} onClick={() => updateClipArt(activeClipArt.id,{flipX:!activeClipArt.flipX})}>Flip X</Button>
-                  <Button variant={activeClipArt.flipY ? "default" : "secondary"} onClick={() => updateClipArt(activeClipArt.id,{flipY:!activeClipArt.flipY})}>Flip Y</Button>
-                </div>
-                <Button variant="destructive" onClick={() => { setClipArts((items)=>items.filter((x)=>x.id!==activeClipArt.id)); setActiveClipArtId(null); }}>Remove clip art</Button>
-              </div>
-            )}
-          </section>
           <h2 className="mb-3 flex items-center gap-2 text-lg">
             <Type className="size-4 text-primary" /> Text design
           </h2>
@@ -1078,117 +1112,63 @@ const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);  co
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
               <div className="flex items-center justify-between gap-2">
-                <Label>Selected {LAYER_LABELS[layer]} size</Label>
+                <Label>All text size — {textScale}%</Label>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => {
-                      if (!active) return;
-                      const current = getLayerTextScale(active, layer);
-                      update(
-                        active.id,
-                        setLayerTextScale(active, layer, current - 0.05),
-                      );
-                    }}
+                    onClick={() => setTextScale((v) => Math.max(20, v - 5))}
                   >
                     <Minus className="size-3" />
                   </Button>
-                  <Input
-                    type="number"
-                    min={20}
-                    max={300}
-                    step={5}
-                    value={Math.round(getLayerTextScale(active, layer) * 100)}
-                    onChange={(e) => {
-                      if (!active) return;
-                      const value = Math.min(
-                        300,
-                        Math.max(20, Number(e.target.value) || 100),
-                      );
-                      update(
-                        active.id,
-                        setLayerTextScale(active, layer, value / 100),
-                      );
-                    }}
-                    className="h-7 w-20"
-                  />
                   <Button
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => {
-                      if (!active) return;
-                      const current = getLayerTextScale(active, layer);
-                      update(
-                        active.id,
-                        setLayerTextScale(active, layer, current + 0.05),
-                      );
-                    }}
+                    onClick={() => setTextScale((v) => Math.min(300, v + 5))}
                   >
                     <Plus className="size-3" />
                   </Button>
                 </div>
               </div>
-              {num(
-                Math.round(getLayerTextScale(active, layer) * 100),
-                (n) => {
-                  if (!active) return;
-                  update(
-                    active.id,
-                    setLayerTextScale(active, layer, n / 100),
-                  );
-                },
-                20,
-                300,
-                5,
-              )}
+              {num(textScale, setTextScale, 20, 300, 5)}
               <p className="mt-1 text-xs text-muted-foreground">
-                Applies only to this person and the selected text line. Other
-                people keep their own text size.
+                Scales every line at once. Text keeps the same position on every shirt size.
               </p>
             </div>
 
-            {layer === "name" && (
-              <div className="grid gap-2">
-                <Label>Name orientation</Label>
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+              <div className="mb-3 font-medium">Position & orientation</div>
+              <div>
+                <Label>Horizontal — {L.xPct.toFixed(0)}%</Label>
+                {num(L.xPct, (n) => patch({ xPct: n }), 0, 100, 0.5)}
+              </div>
+              <div>
+                <Label>Vertical (up / down) — {L.yPct.toFixed(0)}%</Label>
+                {num(L.yPct, (n) => patch({ yPct: n }), 0, 100, 0.5)}
+              </div>
+              <div className="grid gap-2 pt-1">
+                <Label>Text direction</Label>
                 <Select
-                  value={L.orientation}
-                  onValueChange={(v) =>
-                    setStyle((s) =>
-                      setLayerOrientation(
-                        s,
-                        "name",
-                        v as "horizontal" | "vertical",
-                      ),
-                    )
-                  }
+                  value={L.direction}
+                  onValueChange={(v) => patch({ direction: v as TextDirection })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="horizontal">Horizontal</SelectItem>
-                    <SelectItem value="vertical">Vertical</SelectItem>
+                    <SelectItem value="horizontal">Horizontal →</SelectItem>
+                    <SelectItem value="vertical-up">Vertical ↑</SelectItem>
+                    <SelectItem value="vertical-down">Vertical ↓</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Vertical stacks the name from top to bottom. It does not
-                  change the orientation of other text lines.
+                  Applies only to the selected text layer. Position and manual rotation remain independent.
                 </p>
               </div>
-            )}
-
-            <div>
-              <Label>Horizontal — {L.xPct.toFixed(0)}%</Label>
-              {num(L.xPct, (n) => patch({ xPct: n }), 0, 100, 0.5)}
             </div>
-            <div>
-              <Label>Vertical (up / down) — {L.yPct.toFixed(0)}%</Label>
-              {num(L.yPct, (n) => patch({ yPct: n }), 0, 100, 0.5)}
-            </div>
-            <div>
+              <div>
               <Label>Letter spacing — {L.letterSpacingPct.toFixed(1)}%</Label>
               {num(L.letterSpacingPct, (n) => patch({ letterSpacingPct: n }), -5, 30, 0.5)}
             </div>
