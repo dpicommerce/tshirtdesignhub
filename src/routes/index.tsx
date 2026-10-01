@@ -10,8 +10,11 @@ import {
   Grid3x3,
   ImagePlus,
   Loader2,
+  LogIn,
+  LogOut,
   Minus,
   Plus,
+
 
   Ruler,
   Trash2,
@@ -57,7 +60,11 @@ import {
   type PersonRow,
   type SizeSpec,
 } from "@/lib/tshirt";
-
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
+import { PayToExport } from "@/components/PayToExport";
+import { CLIPART_LIBRARY } from "@/lib/clipart-library";
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
@@ -137,6 +144,14 @@ export function Index() {
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
   const [clipArts, setClipArts] = useState<ClipArt[]>([]);
   const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [pending, setPending] = useState<"one" | "all" | null>(null);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => setUser(session?.user ?? null));
+    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const [bulk, setBulk] = useState("");
   const [busy, setBusy] = useState(false);
@@ -199,13 +214,17 @@ export function Index() {
       toast.error("Please choose a PNG, JPG, WEBP or SVG clip art image.");
       return;
     }
+    const src = await new Promise<string>((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result));
+      fr.onerror = () => rej(new Error("read failed"));
+      fr.readAsDataURL(file);
+    }).catch(() => "");
+    if (src) await addClipArtSrc(src, file.name);
+  }, []);
+
+  const addClipArtSrc = async (src: string, label: string) => {
     try {
-      const src = await new Promise<string>((res, rej) => {
-        const fr = new FileReader();
-        fr.onload = () => res(String(fr.result));
-        fr.onerror = () => rej(new Error("read failed"));
-        fr.readAsDataURL(file);
-      });
       const image = new Image();
       image.src = src;
       await image.decode();
@@ -230,9 +249,9 @@ export function Index() {
       setActiveClipArtId(id);
       toast.success(`Clip art added — ${image.naturalWidth}×${image.naturalHeight}px`);
     } catch {
-      toast.error("That clip art could not be read.");
+      toast.error(`"${label}" could not be read.`);
     }
-  }, []);
+  };
 
   const activeClipArt = clipArts.find((a) => a.id === activeClipArtId) ?? null;
   const patchClipArt = (p: Partial<ClipArt>) => {
@@ -354,11 +373,17 @@ export function Index() {
     toast.success(`Imported ${parsed.length} people`);
   };
 
-  const readSheet = async (file: File) => {
+  // Reads the sheet that contains the wanted columns (workbooks may hold both a size chart and a name list)
+  const readSheet = async (file: File, wanted: string[]) => {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]!]!;
-    return XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+    const sheets = wb.SheetNames.map((n) =>
+      XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[n]!, { defval: "", raw: false }),
+    );
+    const hit = sheets.find((rowsOf) =>
+      rowsOf.some((r) => Object.keys(r).some((k) => wanted.includes(k.toLowerCase().replace(/[^a-z]/g, "")))),
+    );
+    return hit ?? sheets[0] ?? [];
   };
 
   const pick = (r: Record<string, unknown>, keys: string[]) => {
@@ -371,13 +396,13 @@ export function Index() {
 
   const importChartFile = async (file: File) => {
     try {
-      const data = await readSheet(file);
+      const data = await readSheet(file, ["width", "widthin", "widthinches", "w"]);
       const next: SizeSpec[] = [];
       let res = 0;
       for (const r of data) {
-        const size = pick(r, ["size"]);
-        const w = Number(pick(r, ["width", "widthin", "widthinches"]));
-        const h = Number(pick(r, ["height", "heightin", "heightinches"]));
+        const size = pick(r, ["size", "sizes", "chest"]);
+        const w = parseFloat(pick(r, ["width", "widthin", "widthinches", "w"]));
+        const h = parseFloat(pick(r, ["height", "heightin", "heightinches", "h", "length"]));
         const dp = Number(pick(r, ["resolution", "dpi", "res"]));
         if (!size || !(w > 0) || !(h > 0)) continue;
         next.push({ size, w, h });
@@ -397,7 +422,7 @@ export function Index() {
 
   const importRosterFile = async (file: File) => {
     try {
-      const data = await readSheet(file);
+      const data = await readSheet(file, ["name", "nameonshirt"]);
       const next: PersonRow[] = [];
       for (const r of data) {
         const name = pick(r, ["name", "nameonshirt"]);
@@ -530,6 +555,28 @@ export function Index() {
     }
   };
 
+  const exportableRows = rows.filter((r) => r.name.trim() || r.number.trim());
+  const pendingFiles = pending === "one" ? 1 : exportableRows.length;
+
+  const signInGoogle = async () => {
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    if (result.error) toast.error("Google sign-in failed. Please try again.");
+  };
+
+  const requestExport = (kind: "one" | "all") => {
+    if (!img) return;
+    if (!user) {
+      toast.error("Please sign in with Google to download.");
+      void signInGoogle();
+      return;
+    }
+    if (kind === "all" && !exportableRows.length) {
+      toast.error("Add at least one name first.");
+      return;
+    }
+    setPending(kind);
+  };
+
   const totalPieces = rows.reduce((a, r) => a + (r.name.trim() ? r.qty : 0), 0);
   const activeSpec = findSize(chart, active?.size ?? BASE_SIZE.size);
   const activePx = sheetPixels(activeSpec, dpi);
@@ -548,6 +595,18 @@ export function Index() {
   return (
     <main className="min-h-screen" style={{ background: "var(--gradient-hero)" }}>
       <Toaster position="top-center" />
+      <PayToExport
+        open={pending !== null}
+        files={pendingFiles}
+        userId={user?.id ?? null}
+        onClose={() => setPending(null)}
+        onPaid={() => {
+          const kind = pending;
+          setPending(null);
+          if (kind === "one") void exportOne();
+          else if (kind === "all") void exportAll();
+        }}
+      />
 
       <header className="border-b border-border/70">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-5 sm:px-6">
@@ -577,10 +636,20 @@ export function Index() {
                 className="h-7 w-20"
               />
             </div>
-            <Button onClick={exportAll} disabled={!img || busy}>
+            <Button onClick={() => requestExport("all")} disabled={!img || busy}>
               {busy ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
               Export all
             </Button>
+            {user ? (
+              <Button variant="ghost" onClick={() => supabase.auth.signOut()} title={user.email ?? ""}>
+                <LogOut className="size-4" />
+                <span className="hidden sm:inline">{user.email?.split("@")[0]}</span>
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={signInGoogle}>
+                <LogIn className="size-4" /> Sign in with Google
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -635,7 +704,7 @@ export function Index() {
                     {imgSrc ? "Replace design" : "Upload design"}
                   </span>
                 </label>
-                <Button variant="secondary" onClick={exportOne} disabled={!img || busy}>
+                <Button variant="secondary" onClick={() => requestExport("one")} disabled={!img || busy}>
                   <Download className="size-4" />
                   This one
                 </Button>
@@ -680,6 +749,21 @@ export function Index() {
                   <ImagePlus className="size-4" /> Upload clip art
                 </span>
               </label>
+            </div>
+
+            <p className="mb-2 text-xs text-muted-foreground">Built-in clip art — tap to add</p>
+            <div className="mb-3 grid grid-cols-6 gap-2">
+              {CLIPART_LIBRARY.map((c) => (
+                <button
+                  key={c.label}
+                  type="button"
+                  title={c.label}
+                  onClick={() => void addClipArtSrc(c.src, c.label)}
+                  className="flex aspect-square items-center justify-center rounded-md border border-border bg-secondary p-1.5 hover:border-primary"
+                >
+                  <img src={c.src} alt={c.label} className="size-full object-contain" />
+                </button>
+              ))}
             </div>
 
             {clipArts.length > 0 ? (
