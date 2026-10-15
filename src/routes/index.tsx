@@ -73,11 +73,11 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error
     return { error };
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("JustHue render error:", error, info);
   }
 
-  render() {
+  override render() {
     if (this.state.error) {
       return (
         <main style={{ minHeight: "100vh", padding: 32, background: "#111", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
