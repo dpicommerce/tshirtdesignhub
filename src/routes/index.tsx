@@ -117,6 +117,37 @@ export const Route = createFileRoute("/")({
         content:
           "Excel-driven t-shirt personalisation: exact inch sizes, up to 300 DPI, gradients, effects and custom fonts.",
       },
+      { name: "keywords", content: "t-shirt name printing, bulk jersey names, custom t-shirt design, team jersey number print, DTF print sheet, 300 DPI t-shirt print, Excel name list t-shirt" },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://tshirtdesignhub.lovable.app/" },
+      { property: "og:site_name", content: "JustHue" },
+      { property: "og:locale", content: "en_IN" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "JustHue — Bulk T-Shirt Print Sheets" },
+      { name: "twitter:description", content: "Excel-driven t-shirt personalisation: exact inch sizes, up to 300 DPI, gradients, effects and custom fonts." },
+    ],
+    links: [{ rel: "canonical", href: "https://tshirtdesignhub.lovable.app/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebApplication",
+              name: "JustHue",
+              url: "https://tshirtdesignhub.lovable.app/",
+              applicationCategory: "DesignApplication",
+              operatingSystem: "Web, Windows",
+              description: "Bulk t-shirt name, number and size print sheet generator with Excel import and up to 300 DPI export.",
+              offers: { "@type": "Offer", price: "1", priceCurrency: "INR" },
+              featureList: ["Excel name list import", "Exact inch print sizes", "Up to 300 DPI PNG export", "Custom fonts", "Gradient and 3D text effects", "Clip art library"],
+            },
+            { "@type": "Organization", name: "JustHue", url: "https://tshirtdesignhub.lovable.app/", logo: "https://tshirtdesignhub.lovable.app/icons/icon-512.png" },
+          ],
+        }),
+      },
     ],
   }),
   
