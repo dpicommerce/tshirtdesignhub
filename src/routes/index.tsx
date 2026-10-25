@@ -959,7 +959,7 @@ export function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[860px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
@@ -1267,7 +1267,7 @@ export function Index() {
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
               <div className="flex items-center justify-between gap-2">
-                <Label>All text size — {textScale}%</Label>
+                <Label>Default text size — {textScale}%</Label>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="secondary"
@@ -1289,7 +1289,7 @@ export function Index() {
               </div>
               {num(textScale, setTextScale, 20, 300, 5)}
               <p className="mt-1 text-xs text-muted-foreground">
-                Scales every line at once. Text keeps the same position on every shirt size.
+                Used only by names that don't have their own text size. Each name can set its own size in the roster's "Text size" column.
               </p>
             </div>
 
