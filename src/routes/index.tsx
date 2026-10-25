@@ -317,7 +317,7 @@ export function Index() {
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
     const canvas = previewRef.current;
-    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100, clipArts);
+    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), (active.textScale ?? textScale) / 100, clipArts);
     if (!showGrid) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -527,7 +527,7 @@ export function Index() {
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100, clipArts);
+    renderShirt(c, img!, row, style, px.w, px.h, (row.textScale ?? textScale) / 100, clipArts);
     const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
     return await pngWithDpi(raw, px.dpi);
   };
