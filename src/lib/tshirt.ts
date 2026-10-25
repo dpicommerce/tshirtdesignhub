@@ -10,6 +10,12 @@ export type PersonRow = {
 
   // Individual text scale for this design
   textScale?: number;
+
+  /**
+   * Per-line size override for THIS design (percent, 100 = no change).
+   * Applied on top of textScale so each text line can vary independently.
+   */
+  layerScales?: Partial<Record<LayerKey, number>>;
 };
 
 export type LayerKey = "name" | "number" | "size" | "phone";
@@ -1063,6 +1069,22 @@ export function renderShirt(
       continue;
     }
 
+    /*
+     * Per-line size for this design:
+     * layerScales[key] (percent) multiplies
+     * the overall text scale, so each text
+     * line can vary independently per name.
+     */
+    const lineScale =
+      Math.max(
+        0.2,
+        Math.min(
+          3,
+          (row.layerScales?.[key] ?? 100) /
+            100,
+        ),
+      );
+
     drawLayer(
       ctx,
       text,
@@ -1071,7 +1093,7 @@ export function renderShirt(
       artworkH,
       artworkX,
       artworkY,
-      ts,
+      ts * lineScale,
     );
   }
 }
