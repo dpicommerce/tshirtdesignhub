@@ -967,6 +967,7 @@ export function Index() {
                     <th className="px-2 pb-1">Number</th>
                     <th className="px-2 pb-1">GAME</th>
                     <th className="px-2 pb-1">Size</th>
+                    <th className="px-2 pb-1">Text size</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
                   </tr>
@@ -1015,6 +1016,45 @@ export function Index() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </td>
+                      <td className="px-2 py-1">
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-7"
+                            onClick={() =>
+                              update(r.id, { textScale: Math.max(20, (r.textScale ?? textScale) - 5) })
+                            }
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min={20}
+                            max={300}
+                            value={r.textScale ?? textScale}
+                            className="h-7 w-16"
+                            onChange={(e) =>
+                              update(r.id, {
+                                textScale: Math.min(
+                                  300,
+                                  Math.max(20, Number(e.target.value) || (r.textScale ?? textScale)),
+                                ),
+                              })
+                            }
+                          />
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-7"
+                            onClick={() =>
+                              update(r.id, { textScale: Math.min(300, (r.textScale ?? textScale) + 5) })
+                            }
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
                       </td>
                       <td className="px-2 py-1">
                         <Input
