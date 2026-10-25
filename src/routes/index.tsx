@@ -317,7 +317,7 @@ export function Index() {
     const spec = findSize(chart, active.size);
     const ratio = spec.h / spec.w;
     const canvas = previewRef.current;
-    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), textScale / 100, clipArts);
+    renderShirt(canvas, img, active, style, 1000, Math.round(1000 * ratio), (active.textScale ?? textScale) / 100, clipArts);
     if (!showGrid) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -527,7 +527,7 @@ export function Index() {
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h, textScale / 100, clipArts);
+    renderShirt(c, img!, row, style, px.w, px.h, (row.textScale ?? textScale) / 100, clipArts);
     const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
     return await pngWithDpi(raw, px.dpi);
   };
@@ -959,7 +959,7 @@ export function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[860px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-2 pb-1">#</th>
@@ -967,6 +967,7 @@ export function Index() {
                     <th className="px-2 pb-1">Number</th>
                     <th className="px-2 pb-1">GAME</th>
                     <th className="px-2 pb-1">Size</th>
+                    <th className="px-2 pb-1">Text size</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
                   </tr>
@@ -1015,6 +1016,45 @@ export function Index() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </td>
+                      <td className="px-2 py-1">
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-7"
+                            onClick={() =>
+                              update(r.id, { textScale: Math.max(20, (r.textScale ?? textScale) - 5) })
+                            }
+                          >
+                            <Minus className="size-3" />
+                          </Button>
+                          <Input
+                            type="number"
+                            min={20}
+                            max={300}
+                            value={r.textScale ?? textScale}
+                            className="h-7 w-16"
+                            onChange={(e) =>
+                              update(r.id, {
+                                textScale: Math.min(
+                                  300,
+                                  Math.max(20, Number(e.target.value) || (r.textScale ?? textScale)),
+                                ),
+                              })
+                            }
+                          />
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="size-7"
+                            onClick={() =>
+                              update(r.id, { textScale: Math.min(300, (r.textScale ?? textScale) + 5) })
+                            }
+                          >
+                            <Plus className="size-3" />
+                          </Button>
+                        </div>
                       </td>
                       <td className="px-2 py-1">
                         <Input
@@ -1227,7 +1267,7 @@ export function Index() {
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
               <div className="flex items-center justify-between gap-2">
-                <Label>All text size — {textScale}%</Label>
+                <Label>Default text size — {textScale}%</Label>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="secondary"
@@ -1249,7 +1289,7 @@ export function Index() {
               </div>
               {num(textScale, setTextScale, 20, 300, 5)}
               <p className="mt-1 text-xs text-muted-foreground">
-                Scales every line at once. Text keeps the same position on every shirt size.
+                Used only by names that don't have their own text size. Each name can set its own size in the roster's "Text size" column.
               </p>
             </div>
 
