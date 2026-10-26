@@ -195,6 +195,21 @@ export function Index() {
   const patch = (p: Partial<LayerStyle>) =>
     setStyle((s) => ({ ...s, [layer]: { ...s[layer], ...p } }));
 
+  /*
+   * The panel's "Text size" slider edits the ACTIVE design only:
+   * it reads/writes that row's per-line multiplier (layerScales),
+   * shown as the effective size (base size x multiplier).
+   */
+  const lineScalePct = active.layerScales?.[layer] ?? 100;
+  const effSize = Math.round(L.sizePct * lineScalePct * 10) / 100;
+  const setEffSize = (k: LayerKey, v: number) =>
+    update(active.id, {
+      layerScales: {
+        ...active.layerScales,
+        [k]: Math.min(300, Math.max(20, Math.round((v / L.sizePct) * 1000) / 10)),
+      },
+    });
+
   useEffect(() => {
     let alive = true;
     (async () => {
