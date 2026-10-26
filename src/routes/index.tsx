@@ -965,12 +965,12 @@ export function Index() {
                     <th className="px-2 pb-1">#</th>
                     <th className="px-2 pb-1">Name on shirt</th>
                     <th className="px-2 pb-1">Number</th>
-                    <th className="px-2 pb-1">GAME</th>
+                    <th className="px-2 pb-1">Phone</th>
                     <th className="px-2 pb-1">Size</th>
                     <th className="px-2 pb-1">Text size</th>
                     <th className="px-2 pb-1">Name %</th>
                     <th className="px-2 pb-1">Number %</th>
-                    <th className="px-2 pb-1">Game %</th>
+                    <th className="px-2 pb-1">Phone %</th>
                     <th className="px-2 pb-1">Size %</th>
                     <th className="px-2 pb-1">Qty</th>
                     <th className="px-2 pb-1"></th>
