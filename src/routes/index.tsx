@@ -1208,13 +1208,16 @@ export function Index() {
 
             <div>
               <div className="flex items-center justify-between gap-2">
-                <Label>Text size</Label>
+                <Label>
+                  Text size —{" "}
+                  <span className="font-normal text-muted-foreground">this design</span>
+                </Label>
                 <div className="flex items-center gap-1">
                   <Button
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => patch({ sizePct: Math.max(1, +(L.sizePct - 0.5).toFixed(1)) })}
+                    onClick={() => setEffSize(layer, Math.max(1, +(effSize - 0.5).toFixed(1)))}
                   >
                     <Minus className="size-3" />
                   </Button>
@@ -1223,11 +1226,12 @@ export function Index() {
                     min={1}
                     max={40}
                     step={0.5}
-                    value={L.sizePct}
+                    value={effSize}
                     onChange={(e) =>
-                      patch({
-                        sizePct: Math.min(40, Math.max(1, Number(e.target.value) || L.sizePct)),
-                      })
+                      setEffSize(
+                        layer,
+                        Math.min(40, Math.max(1, Number(e.target.value) || effSize)),
+                      )
                     }
                     className="h-7 w-20"
                   />
@@ -1235,13 +1239,16 @@ export function Index() {
                     variant="secondary"
                     size="icon"
                     className="size-7"
-                    onClick={() => patch({ sizePct: Math.min(40, +(L.sizePct + 0.5).toFixed(1)) })}
+                    onClick={() => setEffSize(layer, Math.min(40, +(effSize + 0.5).toFixed(1)))}
                   >
                     <Plus className="size-3" />
                   </Button>
                 </div>
               </div>
-              {num(L.sizePct, (n) => patch({ sizePct: n }), 1, 40, 0.5)}
+              {num(effSize, (n) => setEffSize(layer, n), 1, 40, 0.5)}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Applies only to the design you're viewing — other designs keep their own size.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
