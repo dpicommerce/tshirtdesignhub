@@ -201,7 +201,7 @@ export function Index() {
    * shown as the effective size (base size x multiplier).
    */
   const lineScalePct = active.layerScales?.[layer] ?? 100;
-  const effSize = Math.round(L.sizePct * lineScalePct * 10) / 100;
+  const effSize = Math.round(L.sizePct * lineScalePct) / 100;
   const setEffSize = (k: LayerKey, v: number) =>
     update(active.id, {
       layerScales: {
