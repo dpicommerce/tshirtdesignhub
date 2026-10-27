@@ -1293,46 +1293,54 @@ export function Index() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Text width</Label>
+                  <Label>
+                    Text width —{" "}
+                    <span className="font-normal text-muted-foreground">this design</span>
+                  </Label>
                   <Input
                     type="number"
                     min={20}
                     max={300}
                     step={1}
-                    value={L.widthPct}
+                    value={lineW}
                     onChange={(e) =>
-                      patch({
-                        widthPct: Math.min(300, Math.max(20, Number(e.target.value) || L.widthPct)),
-                      })
+                      setLineSize(
+                        "width",
+                        Math.min(300, Math.max(20, Number(e.target.value) || lineW)),
+                      )
                     }
                     className="h-7 w-20"
                   />
                 </div>
-                {num(L.widthPct, (n) => patch({ widthPct: n }), 20, 300, 1)}
+                {num(lineW, (n) => setLineSize("width", n), 20, 300, 1)}
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Text height</Label>
+                  <Label>
+                    Text height —{" "}
+                    <span className="font-normal text-muted-foreground">this design</span>
+                  </Label>
                   <Input
                     type="number"
                     min={20}
                     max={300}
                     step={1}
-                    value={L.heightPct}
+                    value={lineH}
                     onChange={(e) =>
-                      patch({
-                        heightPct: Math.min(
-                          300,
-                          Math.max(20, Number(e.target.value) || L.heightPct),
-                        ),
-                      })
+                      setLineSize(
+                        "height",
+                        Math.min(300, Math.max(20, Number(e.target.value) || lineH)),
+                      )
                     }
                     className="h-7 w-20"
                   />
                 </div>
-                {num(L.heightPct, (n) => patch({ heightPct: n }), 20, 300, 1)}
+                {num(lineH, (n) => setLineSize("height", n), 20, 300, 1)}
               </div>
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Width and height apply only to the design you're viewing — other designs keep their own.
+            </p>
 
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">
