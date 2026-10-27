@@ -210,6 +210,30 @@ export function Index() {
       },
     });
 
+  /*
+   * Text width/height for THIS design only:
+   * reads/writes the active row's per-line
+   * width/height override (layerSizes).
+   */
+  const lineW = active.layerSizes?.[layer]?.width ?? L.widthPct;
+  const lineH = active.layerSizes?.[layer]?.height ?? L.heightPct;
+  const setLineSize = (dim: "width" | "height", v: number) =>
+    update(active.id, {
+      layerSizes: {
+        ...active.layerSizes,
+        [layer]: {
+          width:
+            dim === "width"
+              ? Math.min(300, Math.max(20, Math.round(v)))
+              : (active.layerSizes?.[layer]?.width ?? L.widthPct),
+          height:
+            dim === "height"
+              ? Math.min(300, Math.max(20, Math.round(v)))
+              : (active.layerSizes?.[layer]?.height ?? L.heightPct),
+        },
+      },
+    });
+
   useEffect(() => {
     let alive = true;
     (async () => {
