@@ -210,6 +210,30 @@ export function Index() {
       },
     });
 
+  /*
+   * Text width/height for THIS design only:
+   * reads/writes the active row's per-line
+   * width/height override (layerSizes).
+   */
+  const lineW = active.layerSizes?.[layer]?.width ?? L.widthPct;
+  const lineH = active.layerSizes?.[layer]?.height ?? L.heightPct;
+  const setLineSize = (dim: "width" | "height", v: number) =>
+    update(active.id, {
+      layerSizes: {
+        ...active.layerSizes,
+        [layer]: {
+          width:
+            dim === "width"
+              ? Math.min(300, Math.max(20, Math.round(v)))
+              : (active.layerSizes?.[layer]?.width ?? L.widthPct),
+          height:
+            dim === "height"
+              ? Math.min(300, Math.max(20, Math.round(v)))
+              : (active.layerSizes?.[layer]?.height ?? L.heightPct),
+        },
+      },
+    });
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -972,23 +996,50 @@ export function Index() {
                 <Plus className="size-4" /> Add row
               </Button>
             </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Tap a row to view it in the preview. The "Line size %" boxes resize one text line on
+              that row's shirt only.
+            </p>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[1420px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-2 pb-1">#</th>
-                    <th className="px-2 pb-1">Name on shirt</th>
-                    <th className="px-2 pb-1">Number</th>
-                    <th className="px-2 pb-1">Phone</th>
-                    <th className="px-2 pb-1">Size</th>
-                    <th className="px-2 pb-1">Text size</th>
-                    <th className="px-2 pb-1">Name %</th>
-                    <th className="px-2 pb-1">Number %</th>
-                    <th className="px-2 pb-1">Phone %</th>
-                    <th className="px-2 pb-1">Size %</th>
-                    <th className="px-2 pb-1">Qty</th>
-                    <th className="px-2 pb-1"></th>
+                    <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
+                      Row details
+                    </th>
+                    <th
+                      colSpan={4}
+                      title="Each % box resizes one text line — only on that row's shirt"
+                      className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80"
+                    >
+                      Line size % — this design
+                    </th>
+                    <th colSpan={2} className="px-3 pb-1 pt-1"></th>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="px-3 pb-2">#</th>
+                    <th className="px-3 pb-2">Name on shirt</th>
+                    <th className="px-3 pb-2">Number</th>
+                    <th className="px-3 pb-2">Phone</th>
+                    <th className="px-3 pb-2">Shirt size</th>
+                    <th className="px-3 pb-2" title="Overall text size for this row (100 = default)">
+                      Text size
+                    </th>
+                    <th className="px-3 pb-2" title="Name line size for this row only">
+                      Name
+                    </th>
+                    <th className="px-3 pb-2" title="Number line size for this row only">
+                      Number
+                    </th>
+                    <th className="px-3 pb-2" title="Phone line size for this row only">
+                      Phone
+                    </th>
+                    <th className="px-3 pb-2" title="Shirt-size line size for this row only">
+                      Size
+                    </th>
+                    <th className="px-3 pb-2">Qty</th>
+                    <th className="px-3 pb-2"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -996,17 +1047,22 @@ export function Index() {
                     <tr
                       key={r.id}
                       onClick={() => setActiveId(r.id)}
-                      className={`cursor-pointer ${r.id === active?.id ? "bg-secondary" : "hover:bg-secondary/60"}`}
+                      className={`cursor-pointer odd:bg-secondary/20 ${
+                        r.id === active?.id
+                          ? "bg-secondary ring-1 ring-inset ring-primary/60"
+                          : "hover:bg-secondary/60"
+                      }`}
                     >
                       <td className="px-2 text-muted-foreground">{i + 1}</td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.name}
                           placeholder="Name"
+                          className="min-w-[170px]"
                           onChange={(e) => update(r.id, { name: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.number}
                           placeholder="10"
@@ -1014,7 +1070,7 @@ export function Index() {
                           onChange={(e) => update(r.id, { number: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.phone}
                           placeholder="Phone"
@@ -1022,7 +1078,7 @@ export function Index() {
                           onChange={(e) => update(r.id, { phone: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
                           <SelectTrigger className="w-[150px]">
                             <SelectValue />
@@ -1036,7 +1092,7 @@ export function Index() {
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="secondary"
@@ -1053,7 +1109,7 @@ export function Index() {
                             min={20}
                             max={300}
                             value={r.textScale ?? textScale}
-                            className="h-7 w-16"
+                            className="h-8 w-16"
                             onChange={(e) =>
                               update(r.id, {
                                 textScale: Math.min(
@@ -1076,14 +1132,14 @@ export function Index() {
                         </div>
                       </td>
                       {(["name", "number", "phone", "size"] as LayerKey[]).map((k) => (
-                        <td key={k} className="px-2 py-1" onClick={(e) => e.stopPropagation()}>
+                        <td key={k} className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                           <Input
                             type="number"
                             min={20}
                             max={300}
                             title={`${LAYER_LABELS[k]} size for this design`}
                             value={r.layerScales?.[k] ?? 100}
-                            className="h-7 w-16"
+                            className="h-8 w-16"
                             onChange={(e) =>
                               update(r.id, {
                                 layerScales: {
@@ -1095,7 +1151,7 @@ export function Index() {
                           />
                         </td>
                       ))}
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           type="number"
                           min={1}
@@ -1106,7 +1162,7 @@ export function Index() {
                           }
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1269,46 +1325,54 @@ export function Index() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Text width</Label>
+                  <Label>
+                    Text width —{" "}
+                    <span className="font-normal text-muted-foreground">this design</span>
+                  </Label>
                   <Input
                     type="number"
                     min={20}
                     max={300}
                     step={1}
-                    value={L.widthPct}
+                    value={lineW}
                     onChange={(e) =>
-                      patch({
-                        widthPct: Math.min(300, Math.max(20, Number(e.target.value) || L.widthPct)),
-                      })
+                      setLineSize(
+                        "width",
+                        Math.min(300, Math.max(20, Number(e.target.value) || lineW)),
+                      )
                     }
                     className="h-7 w-20"
                   />
                 </div>
-                {num(L.widthPct, (n) => patch({ widthPct: n }), 20, 300, 1)}
+                {num(lineW, (n) => setLineSize("width", n), 20, 300, 1)}
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <Label>Text height</Label>
+                  <Label>
+                    Text height —{" "}
+                    <span className="font-normal text-muted-foreground">this design</span>
+                  </Label>
                   <Input
                     type="number"
                     min={20}
                     max={300}
                     step={1}
-                    value={L.heightPct}
+                    value={lineH}
                     onChange={(e) =>
-                      patch({
-                        heightPct: Math.min(
-                          300,
-                          Math.max(20, Number(e.target.value) || L.heightPct),
-                        ),
-                      })
+                      setLineSize(
+                        "height",
+                        Math.min(300, Math.max(20, Number(e.target.value) || lineH)),
+                      )
                     }
                     className="h-7 w-20"
                   />
                 </div>
-                {num(L.heightPct, (n) => patch({ heightPct: n }), 20, 300, 1)}
+                {num(lineH, (n) => setLineSize("height", n), 20, 300, 1)}
               </div>
             </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Width and height apply only to the design you're viewing — other designs keep their own.
+            </p>
 
 
             <div className="rounded-md border border-border/70 bg-secondary/40 p-3">

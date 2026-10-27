@@ -16,6 +16,12 @@ export type PersonRow = {
    * Applied on top of textScale so each text line can vary independently.
    */
   layerScales?: Partial<Record<LayerKey, number>>;
+
+  /**
+   * Per-line width/height override for THIS design (percent, 100 = no change).
+   * Each text line can stretch independently per name.
+   */
+  layerSizes?: Partial<Record<LayerKey, { width?: number; height?: number }>>;
 };
 
 export type LayerKey = "name" | "number" | "size" | "phone";
@@ -1085,10 +1091,21 @@ export function renderShirt(
         ),
       );
 
+    /*
+     * Per-line width/height for THIS design:
+     * layerSizes[key] stretches only this line
+     * on this row's shirt.
+     */
+    const eff: LayerStyle = {
+      ...l,
+      widthPct: row.layerSizes?.[key]?.width ?? l.widthPct,
+      heightPct: row.layerSizes?.[key]?.height ?? l.heightPct,
+    };
+
     drawLayer(
       ctx,
       text,
-      l,
+      eff,
       artworkW,
       artworkH,
       artworkX,
