@@ -998,21 +998,44 @@ export function Index() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[1080px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-2 pb-1">#</th>
-                    <th className="px-2 pb-1">Name on shirt</th>
-                    <th className="px-2 pb-1">Number</th>
-                    <th className="px-2 pb-1">Phone</th>
-                    <th className="px-2 pb-1">Size</th>
-                    <th className="px-2 pb-1">Text size</th>
-                    <th className="px-2 pb-1">Name %</th>
-                    <th className="px-2 pb-1">Number %</th>
-                    <th className="px-2 pb-1">Phone %</th>
-                    <th className="px-2 pb-1">Size %</th>
-                    <th className="px-2 pb-1">Qty</th>
-                    <th className="px-2 pb-1"></th>
+                    <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
+                      Row details
+                    </th>
+                    <th
+                      colSpan={4}
+                      title="Each % box resizes one text line — only on that row's shirt"
+                      className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80"
+                    >
+                      Line size % — this design
+                    </th>
+                    <th colSpan={2} className="px-3 pb-1 pt-1"></th>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="px-3 pb-2">#</th>
+                    <th className="px-3 pb-2">Name on shirt</th>
+                    <th className="px-3 pb-2">Number</th>
+                    <th className="px-3 pb-2">Phone</th>
+                    <th className="px-3 pb-2">Shirt size</th>
+                    <th className="px-3 pb-2" title="Overall text size for this row (100 = default)">
+                      Text size
+                    </th>
+                    <th className="px-3 pb-2" title="Name line size for this row only">
+                      Name
+                    </th>
+                    <th className="px-3 pb-2" title="Number line size for this row only">
+                      Number
+                    </th>
+                    <th className="px-3 pb-2" title="Phone line size for this row only">
+                      Phone
+                    </th>
+                    <th className="px-3 pb-2" title="Shirt-size line size for this row only">
+                      Size
+                    </th>
+                    <th className="px-3 pb-2">Qty</th>
+                    <th className="px-3 pb-2"></th>
                   </tr>
                 </thead>
                 <tbody>
