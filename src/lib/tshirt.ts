@@ -16,6 +16,12 @@ export type PersonRow = {
    * Applied on top of textScale so each text line can vary independently.
    */
   layerScales?: Partial<Record<LayerKey, number>>;
+
+  /**
+   * Per-line width/height override for THIS design (percent, 100 = no change).
+   * Each text line can stretch independently per name.
+   */
+  layerSizes?: Partial<Record<LayerKey, { width?: number; height?: number }>>;
 };
 
 export type LayerKey = "name" | "number" | "size" | "phone";
