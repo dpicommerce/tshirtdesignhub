@@ -1091,10 +1091,21 @@ export function renderShirt(
         ),
       );
 
+    /*
+     * Per-line width/height for THIS design:
+     * layerSizes[key] stretches only this line
+     * on this row's shirt.
+     */
+    const eff: LayerStyle = {
+      ...l,
+      widthPct: row.layerSizes?.[key]?.width ?? l.widthPct,
+      heightPct: row.layerSizes?.[key]?.height ?? l.heightPct,
+    };
+
     drawLayer(
       ctx,
       text,
-      l,
+      eff,
       artworkW,
       artworkH,
       artworkX,
