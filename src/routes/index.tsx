@@ -1054,14 +1054,14 @@ export function Index() {
                       }`}
                     >
                       <td className="px-2 text-muted-foreground">{i + 1}</td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.name}
                           placeholder="Name"
                           onChange={(e) => update(r.id, { name: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.number}
                           placeholder="10"
@@ -1069,7 +1069,7 @@ export function Index() {
                           onChange={(e) => update(r.id, { number: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           value={r.phone}
                           placeholder="Phone"
@@ -1077,7 +1077,7 @@ export function Index() {
                           onChange={(e) => update(r.id, { phone: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
                           <SelectTrigger className="w-[150px]">
                             <SelectValue />
@@ -1091,7 +1091,7 @@ export function Index() {
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="secondary"
@@ -1108,7 +1108,7 @@ export function Index() {
                             min={20}
                             max={300}
                             value={r.textScale ?? textScale}
-                            className="h-7 w-16"
+                            className="h-8 w-16"
                             onChange={(e) =>
                               update(r.id, {
                                 textScale: Math.min(
@@ -1131,14 +1131,14 @@ export function Index() {
                         </div>
                       </td>
                       {(["name", "number", "phone", "size"] as LayerKey[]).map((k) => (
-                        <td key={k} className="px-2 py-1" onClick={(e) => e.stopPropagation()}>
+                        <td key={k} className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
                           <Input
                             type="number"
                             min={20}
                             max={300}
                             title={`${LAYER_LABELS[k]} size for this design`}
                             value={r.layerScales?.[k] ?? 100}
-                            className="h-7 w-16"
+                            className="h-8 w-16"
                             onChange={(e) =>
                               update(r.id, {
                                 layerScales: {
@@ -1150,7 +1150,7 @@ export function Index() {
                           />
                         </td>
                       ))}
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Input
                           type="number"
                           min={1}
@@ -1161,7 +1161,7 @@ export function Index() {
                           }
                         />
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-1.5">
                         <Button
                           variant="ghost"
                           size="icon"
