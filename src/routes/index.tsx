@@ -1043,7 +1043,11 @@ export function Index() {
                     <tr
                       key={r.id}
                       onClick={() => setActiveId(r.id)}
-                      className={`cursor-pointer ${r.id === active?.id ? "bg-secondary" : "hover:bg-secondary/60"}`}
+                      className={`cursor-pointer odd:bg-secondary/20 ${
+                        r.id === active?.id
+                          ? "bg-secondary ring-1 ring-inset ring-primary/60"
+                          : "hover:bg-secondary/60"
+                      }`}
                     >
                       <td className="px-2 text-muted-foreground">{i + 1}</td>
                       <td className="px-2 py-1">
