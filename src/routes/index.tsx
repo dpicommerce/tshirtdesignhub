@@ -1002,7 +1002,7 @@ export function Index() {
             </p>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1080px] border-separate border-spacing-y-1 text-sm">
+              <table className="w-full min-w-[1420px] border-separate border-spacing-y-1 text-sm">
                 <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
@@ -1058,6 +1058,7 @@ export function Index() {
                         <Input
                           value={r.name}
                           placeholder="Name"
+                          className="min-w-[170px]"
                           onChange={(e) => update(r.id, { name: e.target.value })}
                         />
                       </td>
