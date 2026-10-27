@@ -996,6 +996,10 @@ export function Index() {
                 <Plus className="size-4" /> Add row
               </Button>
             </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Tap a row to view it in the preview. The "Line size %" boxes resize one text line on
+              that row's shirt only.
+            </p>
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1080px] border-separate border-spacing-y-1 text-sm">
