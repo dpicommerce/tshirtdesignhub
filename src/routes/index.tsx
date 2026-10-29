@@ -3,9 +3,12 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, type Erro
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
+  EyeOff,
   FileSpreadsheet,
   Grid3x3,
   ImagePlus,
@@ -13,9 +16,11 @@ import {
   LogIn,
   LogOut,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
-
-
   Ruler,
   Trash2,
   Type,
