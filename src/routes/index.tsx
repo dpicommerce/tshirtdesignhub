@@ -3,9 +3,12 @@ import { Component, useCallback, useEffect, useMemo, useRef, useState, type Erro
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
+  Eye,
+  EyeOff,
   FileSpreadsheet,
   Grid3x3,
   ImagePlus,
@@ -13,9 +16,11 @@ import {
   LogIn,
   LogOut,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
-
-
   Ruler,
   Trash2,
   Type,
@@ -161,6 +166,45 @@ const starterRows: PersonRow[] = [
   { id: uid(), name: "SPORTS", phone: "VOLLEY BALL", number: "", size: "42", qty: 1 },
 ];
 
+function CollapsibleSection({
+  open,
+  onToggle,
+  title,
+  subtitle,
+  icon,
+  actions,
+  children,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  title: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="panel overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-secondary/50"
+      >
+        {icon}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{title}</span>
+          {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+        </span>
+        {actions}
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && <div className="border-t border-border/70 p-3">{children}</div>}
+    </section>
+  );
+}
+
 export function Index() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -172,6 +216,11 @@ export function Index() {
   const [dpi, setDpi] = useState(BASE_DPI);
   const [textScale, setTextScale] = useState(100);
   const [showGrid, setShowGrid] = useState(true);
+  const [showLeft, setShowLeft] = useState(true);
+  const [showRight, setShowRight] = useState(true);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (key: string) =>
+    setOpenSections((s) => ({ ...s, [key]: !(s[key] ?? true) }));
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
   const [clipArts, setClipArts] = useState<ClipArt[]>([]);
   const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);
@@ -748,7 +797,7 @@ export function Index() {
         {showLeft && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[360px] xl:w-[410px] lg:overflow-y-auto lg:pr-0.5">
             <CollapsibleSection
-              open={openSections.excel ?? true}
+              open={openSections["excel"] ?? true}
               onToggle={() => toggleSection("excel")}
               title="Excel import"
               icon={<FileSpreadsheet className="size-4 shrink-0 text-primary" />}
@@ -820,7 +869,7 @@ export function Index() {
             </CollapsibleSection>
 
             <CollapsibleSection
-              open={openSections.roster ?? true}
+              open={openSections["roster"] ?? true}
               onToggle={() => toggleSection("roster")}
               title="Roster"
               subtitle={`${rows.length} rows · ${totalPieces} pieces`}
@@ -1030,7 +1079,7 @@ export function Index() {
             </CollapsibleSection>
 
             <CollapsibleSection
-              open={openSections.clipart ?? true}
+              open={openSections["clipart"] ?? true}
               onToggle={() => toggleSection("clipart")}
               title="Clip art"
               subtitle="Show, hide or adjust each one"
@@ -1246,7 +1295,7 @@ export function Index() {
         {showRight && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[350px] xl:w-[380px] lg:overflow-y-auto lg:pl-0.5">
             <CollapsibleSection
-              open={openSections.text ?? true}
+              open={openSections["text"] ?? true}
               onToggle={() => toggleSection("text")}
               title="Text design"
               subtitle={`${LAYER_LABELS[layer]} layer`}

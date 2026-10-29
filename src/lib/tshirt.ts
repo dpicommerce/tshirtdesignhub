@@ -104,6 +104,7 @@ export type ClipArt = {
   id: string;
   src: string;
   image?: HTMLImageElement;
+  hidden?: boolean;
   xPct: number;
   yPct: number;
   widthPct: number;
@@ -1013,6 +1014,7 @@ export function renderShirt(
    * on top of the clip art.
    */
   for (const art of clipArts) {
+    if (art.hidden) continue;
     drawClipArt(ctx, art, w, h);
   }
 
