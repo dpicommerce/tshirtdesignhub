@@ -161,6 +161,45 @@ const starterRows: PersonRow[] = [
   { id: uid(), name: "SPORTS", phone: "VOLLEY BALL", number: "", size: "42", qty: 1 },
 ];
 
+function CollapsibleSection({
+  open,
+  onToggle,
+  title,
+  subtitle,
+  icon,
+  actions,
+  children,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  title: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="panel overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-secondary/50"
+      >
+        {icon}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{title}</span>
+          {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+        </span>
+        {actions}
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && <div className="border-t border-border/70 p-3">{children}</div>}
+    </section>
+  );
+}
+
 export function Index() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
@@ -172,6 +211,11 @@ export function Index() {
   const [dpi, setDpi] = useState(BASE_DPI);
   const [textScale, setTextScale] = useState(100);
   const [showGrid, setShowGrid] = useState(true);
+  const [showLeft, setShowLeft] = useState(true);
+  const [showRight, setShowRight] = useState(true);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const toggleSection = (key: string) =>
+    setOpenSections((s) => ({ ...s, [key]: !(s[key] ?? true) }));
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
   const [clipArts, setClipArts] = useState<ClipArt[]>([]);
   const [activeClipArtId, setActiveClipArtId] = useState<string | null>(null);
