@@ -797,7 +797,7 @@ export function Index() {
         {showLeft && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[360px] xl:w-[410px] lg:overflow-y-auto lg:pr-0.5">
             <CollapsibleSection
-              open={openSections.excel ?? true}
+              open={openSections["excel"] ?? true}
               onToggle={() => toggleSection("excel")}
               title="Excel import"
               icon={<FileSpreadsheet className="size-4 shrink-0 text-primary" />}
@@ -869,7 +869,7 @@ export function Index() {
             </CollapsibleSection>
 
             <CollapsibleSection
-              open={openSections.roster ?? true}
+              open={openSections["roster"] ?? true}
               onToggle={() => toggleSection("roster")}
               title="Roster"
               subtitle={`${rows.length} rows · ${totalPieces} pieces`}
@@ -1079,7 +1079,7 @@ export function Index() {
             </CollapsibleSection>
 
             <CollapsibleSection
-              open={openSections.clipart ?? true}
+              open={openSections["clipart"] ?? true}
               onToggle={() => toggleSection("clipart")}
               title="Clip art"
               subtitle="Show, hide or adjust each one"
@@ -1295,7 +1295,7 @@ export function Index() {
         {showRight && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[350px] xl:w-[380px] lg:overflow-y-auto lg:pl-0.5">
             <CollapsibleSection
-              open={openSections.text ?? true}
+              open={openSections["text"] ?? true}
               onToggle={() => toggleSection("text")}
               title="Text design"
               subtitle={`${LAYER_LABELS[layer]} layer`}
