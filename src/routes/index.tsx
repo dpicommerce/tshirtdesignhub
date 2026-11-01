@@ -1294,13 +1294,13 @@ export function Index() {
         {/* RIGHT: text design */}
         {showRight && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[350px] xl:w-[380px] lg:overflow-y-auto lg:pl-0.5">
-            <CollapsibleSection
-              open={openSections["text"] ?? true}
-              onToggle={() => toggleSection("text")}
-              title="Text design"
-              subtitle={`${LAYER_LABELS[layer]} layer`}
-              icon={<Type className="size-4 shrink-0 text-primary" />}
-            >
+            <div className="panel p-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-semibold">Text design</span>
+                <span className="text-xs text-muted-foreground">
+                  {L.enabled ? `${LAYER_LABELS[layer]} printing` : `${LAYER_LABELS[layer]} hidden`}
+                </span>
+              </div>
               <Tabs value={layer} onValueChange={(v) => setLayer(v as LayerKey)}>
                 <TabsList className="grid w-full grid-cols-4">
                   {LAYER_KEYS.map((k) => (
@@ -1310,8 +1310,16 @@ export function Index() {
                   ))}
                 </TabsList>
               </Tabs>
+            </div>
 
-              <div className="mt-4 grid gap-4">
+            <CollapsibleSection
+              open={openSections["text-basic"] ?? true}
+              onToggle={() => toggleSection("text-basic")}
+              title="Font & size"
+              subtitle={`${LAYER_LABELS[layer]} layer`}
+              icon={<Type className="size-4 shrink-0 text-primary" />}
+            >
+              <div className="grid gap-4">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="enabled">Print this line</Label>
                   <Switch
