@@ -1500,7 +1500,17 @@ export function Index() {
                     Used only by names that don't have their own text size. Each name can set its own size in the roster's "Text size" column.
                   </p>
                 </div>
+              </div>
+            </CollapsibleSection>
 
+            <CollapsibleSection
+              open={openSections["text-pos"] ?? true}
+              onToggle={() => toggleSection("text-pos")}
+              title="Position & placement"
+              subtitle={`${LAYER_LABELS[layer]} layer`}
+              icon={<Ruler className="size-4 shrink-0 text-primary" />}
+            >
+              <div className="grid gap-4">
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
                   <div className="mb-3 font-medium">Position & orientation</div>
                   <div>
