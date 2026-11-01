@@ -1500,7 +1500,17 @@ export function Index() {
                     Used only by names that don't have their own text size. Each name can set its own size in the roster's "Text size" column.
                   </p>
                 </div>
+              </div>
+            </CollapsibleSection>
 
+            <CollapsibleSection
+              open={openSections["text-pos"] ?? true}
+              onToggle={() => toggleSection("text-pos")}
+              title="Position & placement"
+              subtitle={`${LAYER_LABELS[layer]} layer`}
+              icon={<Ruler className="size-4 shrink-0 text-primary" />}
+            >
+              <div className="grid gap-4">
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
                   <div className="mb-3 font-medium">Position & orientation</div>
                   <div>
@@ -1548,6 +1558,17 @@ export function Index() {
                   {num(L.opacity, (n) => patch({ opacity: n }), 10, 100)}
                 </div>
 
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              open={openSections["text-style"] ?? true}
+              onToggle={() => toggleSection("text-style")}
+              title="Colour & effects"
+              subtitle={`${LAYER_LABELS[layer]} layer`}
+              icon={<Palette className="size-4 shrink-0 text-primary" />}
+            >
+              <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label>Fill</Label>
                   <Select
@@ -1645,6 +1666,293 @@ export function Index() {
               </div>
             </CollapsibleSection>
           </aside>
+        )}
+        </div>
+
+        {showBottom && (
+          <div className="grid shrink-0 gap-3 lg:max-h-[46vh] lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:overflow-y-auto lg:pr-1">
+            <CollapsibleSection
+              open={openSections["excel"] ?? true}
+              onToggle={() => toggleSection("excel")}
+              title="Excel import"
+              icon={<FileSpreadsheet className="size-4 shrink-0 text-primary" />}
+              actions={
+                <Button variant="secondary" size="sm" onClick={downloadTemplate}>
+                  <Download className="size-3.5" /> Template
+                </Button>
+              }
+            >
+              <div className="grid gap-3">
+                <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
+                  <span className="font-medium">Upload size chart (.xlsx / .csv)</span>
+                  <span className="text-xs text-muted-foreground">
+                    Columns: Size, Width (in), Height (in), Resolution
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void importChartFile(f);
+                    }}
+                  />
+                </label>
+                <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
+                  <span className="font-medium">Upload name list (.xlsx / .csv)</span>
+                  <span className="text-xs text-muted-foreground">
+                    Columns: Name, Number, Phone, Size, Qty
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="sr-only"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void importRosterFile(f);
+                    }}
+                  />
+                </label>
+              </div>
+              <div className="mt-3 max-h-44 overflow-auto rounded-md border border-border">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-secondary text-left uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="px-2 py-1">Size</th>
+                      <th className="px-2 py-1">Width (in)</th>
+                      <th className="px-2 py-1">Height (in)</th>
+                      <th className="px-2 py-1">Pixels @ {dpi}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chart.map((s) => {
+                      const px = sheetPixels(s, dpi);
+                      return (
+                        <tr key={s.size} className="border-t border-border/60">
+                          <td className="px-2 py-1 font-medium">{s.size}</td>
+                          <td className="px-2 py-1">{s.w}</td>
+                          <td className="px-2 py-1">{s.h}</td>
+                          <td className="px-2 py-1 text-muted-foreground">
+                            {px.w}×{px.h}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              open={openSections["roster"] ?? true}
+              onToggle={() => toggleSection("roster")}
+              title="Roster"
+              subtitle={`${rows.length} rows · ${totalPieces} pieces`}
+              actions={
+                <Button variant="secondary" size="sm" onClick={addRow}>
+                  <Plus className="size-3.5" /> Add row
+                </Button>
+              }
+            >
+              <p className="mb-2 text-xs text-muted-foreground">
+                Tap a row to view it in the preview. The "Line size %" boxes resize one text line on
+                that row's shirt only.
+              </p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1420px] border-separate border-spacing-y-1 text-sm">
+                  <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
+                        Row details
+                      </th>
+                      <th
+                        colSpan={4}
+                        title="Each % box resizes one text line — only on that row's shirt"
+                        className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80"
+                      >
+                        Line size % — this design
+                      </th>
+                      <th colSpan={2} className="px-3 pb-1 pt-1"></th>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <th className="px-3 pb-2">#</th>
+                      <th className="px-3 pb-2">Name on shirt</th>
+                      <th className="px-3 pb-2">Number</th>
+                      <th className="px-3 pb-2">Phone</th>
+                      <th className="px-3 pb-2">Shirt size</th>
+                      <th className="px-3 pb-2" title="Overall text size for this row (100 = default)">
+                        Text size
+                      </th>
+                      <th className="px-3 pb-2" title="Name line size for this row only">
+                        Name
+                      </th>
+                      <th className="px-3 pb-2" title="Number line size for this row only">
+                        Number
+                      </th>
+                      <th className="px-3 pb-2" title="Phone line size for this row only">
+                        Phone
+                      </th>
+                      <th className="px-3 pb-2" title="Shirt-size line size for this row only">
+                        Size
+                      </th>
+                      <th className="px-3 pb-2">Qty</th>
+                      <th className="px-3 pb-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr
+                        key={r.id}
+                        onClick={() => setActiveId(r.id)}
+                        className={`cursor-pointer odd:bg-secondary/20 ${
+                          r.id === active?.id
+                            ? "bg-secondary ring-1 ring-inset ring-primary/60"
+                            : "hover:bg-secondary/60"
+                        }`}
+                      >
+                        <td className="px-2 text-muted-foreground">{i + 1}</td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            value={r.name}
+                            placeholder="Name"
+                            className="min-w-[170px]"
+                            onChange={(e) => update(r.id, { name: e.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            value={r.number}
+                            placeholder="10"
+                            className="w-20"
+                            onChange={(e) => update(r.id, { number: e.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Input
+                            value={r.phone}
+                            placeholder="Phone"
+                            className="w-32"
+                            onChange={(e) => update(r.id, { phone: e.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
+                            <SelectTrigger className="w-[150px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {chart.map((s) => (
+                                <SelectItem key={s.size} value={s.size}>
+                                  {s.size} — {s.w}×{s.h}"
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="size-7"
+                              onClick={() =>
+                                update(r.id, { textScale: Math.max(20, (r.textScale ?? textScale) - 5) })
+                              }
+                            >
+                              <Minus className="size-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min={20}
+                              max={300}
+                              value={r.textScale ?? textScale}
+                              className="h-8 w-16"
+                              onChange={(e) =>
+                                update(r.id, {
+                                  textScale: Math.min(
+                                    300,
+                                    Math.max(20, Number(e.target.value) || (r.textScale ?? textScale)),
+                                  ),
+                                })
+                              }
+                            />
+                            <Button
+                              variant="secondary"
+                              size="icon"
+                              className="size-7"
+                              onClick={() =>
+                                update(r.id, { textScale: Math.min(300, (r.textScale ?? textScale) + 5) })
+                              }
+                            >
+                              <Plus className="size-3" />
+                            </Button>
+                          </div>
+                        </td>
+                        {(["name", "number", "phone", "size"] as LayerKey[]).map((k) => (
+                          <td key={k} className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
+                            <Input
+                              type="number"
+                              min={20}
+                              max={300}
+                              title={`${LAYER_LABELS[k]} size for this design`}
+                              value={r.layerScales?.[k] ?? 100}
+                              className="h-8 w-16"
+                              onChange={(e) =>
+                                update(r.id, {
+                                  layerScales: {
+                                    ...r.layerScales,
+                                    [k]: Math.min(300, Math.max(20, Number(e.target.value) || 100)),
+                                  },
+                                })
+                              }
+                            />
+                          </td>
+                        ))}
+                        <td className="px-3 py-1.5">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={r.qty}
+                            className="w-16"
+                            onChange={(e) =>
+                              update(r.id, { qty: Math.max(1, Number(e.target.value) || 1) })
+                            }
+                          />
+                        </td>
+                        <td className="px-3 py-1.5">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeRow(r.id);
+                            }}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 grid gap-2">
+                <Label htmlFor="bulk">Paste a list</Label>
+                <Textarea
+                  id="bulk"
+                  rows={3}
+                  value={bulk}
+                  onChange={(e) => setBulk(e.target.value)}
+                  placeholder={"Alex Carter, 10, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
+                />
+                <Button variant="secondary" onClick={importBulk} className="justify-self-start">
+                  Replace roster with list
+                </Button>
+              </div>
+            </CollapsibleSection>
+          </div>
         )}
       </div>
     </main>
