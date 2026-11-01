@@ -1548,6 +1548,17 @@ export function Index() {
                   {num(L.opacity, (n) => patch({ opacity: n }), 10, 100)}
                 </div>
 
+              </div>
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              open={openSections["text-style"] ?? true}
+              onToggle={() => toggleSection("text-style")}
+              title="Colour & effects"
+              subtitle={`${LAYER_LABELS[layer]} layer`}
+              icon={<Palette className="size-4 shrink-0 text-primary" />}
+            >
+              <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label>Fill</Label>
                   <Select
