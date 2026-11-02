@@ -16,6 +16,9 @@ import {
   LogIn,
   LogOut,
   Minus,
+  Palette,
+  PanelBottomClose,
+  PanelBottomOpen,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
@@ -185,21 +188,23 @@ function CollapsibleSection({
 }) {
   return (
     <section className="panel overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-secondary/50"
-      >
-        {icon}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">{title}</span>
-          {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
-        </span>
-        {actions}
-        <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
-        />
-      </button>
+      <div className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/50">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-center gap-2 py-0.5 text-left"
+        >
+          {icon}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">{title}</span>
+            {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+          </span>
+          <ChevronDown
+            className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+          />
+        </button>
+        {actions && <div className="shrink-0">{actions}</div>}
+      </div>
       {open && <div className="border-t border-border/70 p-3">{children}</div>}
     </section>
   );
@@ -218,6 +223,7 @@ export function Index() {
   const [showGrid, setShowGrid] = useState(true);
   const [showLeft, setShowLeft] = useState(true);
   const [showRight, setShowRight] = useState(true);
+  const [showBottom, setShowBottom] = useState(true);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const toggleSection = (key: string) =>
     setOpenSections((s) => ({ ...s, [key]: !(s[key] ?? true) }));
@@ -758,6 +764,14 @@ export function Index() {
             >
               {showRight ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
             </Button>
+            <Button
+              variant={showBottom ? "secondary" : "ghost"}
+              size="icon"
+              title={showBottom ? "Hide the Excel and roster strip" : "Show the Excel and roster strip"}
+              onClick={() => setShowBottom((v) => !v)}
+            >
+              {showBottom ? <PanelBottomClose className="size-4" /> : <PanelBottomOpen className="size-4" />}
+            </Button>
             <div className="flex items-center gap-2 rounded-md border border-input bg-secondary px-3 py-1.5">
               <Label htmlFor="dpi" className="text-xs text-muted-foreground">
                 DPI
@@ -792,292 +806,11 @@ export function Index() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 px-3 py-3 sm:px-4 lg:min-h-0 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 px-3 py-3 sm:px-4 lg:min-h-0">
+        <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         {/* LEFT: functions */}
         {showLeft && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[360px] xl:w-[410px] lg:overflow-y-auto lg:pr-0.5">
-            <CollapsibleSection
-              open={openSections["excel"] ?? true}
-              onToggle={() => toggleSection("excel")}
-              title="Excel import"
-              icon={<FileSpreadsheet className="size-4 shrink-0 text-primary" />}
-              actions={
-                <Button variant="secondary" size="sm" onClick={downloadTemplate}>
-                  <Download className="size-3.5" /> Template
-                </Button>
-              }
-            >
-              <div className="grid gap-3">
-                <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
-                  <span className="font-medium">Upload size chart (.xlsx / .csv)</span>
-                  <span className="text-xs text-muted-foreground">
-                    Columns: Size, Width (in), Height (in), Resolution
-                  </span>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void importChartFile(f);
-                    }}
-                  />
-                </label>
-                <label className="flex cursor-pointer flex-col gap-1 rounded-md border border-dashed border-border/80 bg-secondary/40 p-3 text-sm hover:bg-secondary">
-                  <span className="font-medium">Upload name list (.xlsx / .csv)</span>
-                  <span className="text-xs text-muted-foreground">
-                    Columns: Name, Number, Phone, Size, Qty
-                  </span>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    className="sr-only"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) void importRosterFile(f);
-                    }}
-                  />
-                </label>
-              </div>
-              <div className="mt-3 max-h-44 overflow-auto rounded-md border border-border">
-                <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-secondary text-left uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th className="px-2 py-1">Size</th>
-                      <th className="px-2 py-1">Width (in)</th>
-                      <th className="px-2 py-1">Height (in)</th>
-                      <th className="px-2 py-1">Pixels @ {dpi}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chart.map((s) => {
-                      const px = sheetPixels(s, dpi);
-                      return (
-                        <tr key={s.size} className="border-t border-border/60">
-                          <td className="px-2 py-1 font-medium">{s.size}</td>
-                          <td className="px-2 py-1">{s.w}</td>
-                          <td className="px-2 py-1">{s.h}</td>
-                          <td className="px-2 py-1 text-muted-foreground">
-                            {px.w}×{px.h}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection
-              open={openSections["roster"] ?? true}
-              onToggle={() => toggleSection("roster")}
-              title="Roster"
-              subtitle={`${rows.length} rows · ${totalPieces} pieces`}
-              actions={
-                <Button variant="secondary" size="sm" onClick={addRow}>
-                  <Plus className="size-3.5" /> Add row
-                </Button>
-              }
-            >
-              <p className="mb-2 text-xs text-muted-foreground">
-                Tap a row to view it in the preview. The "Line size %" boxes resize one text line on
-                that row's shirt only.
-              </p>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1420px] border-separate border-spacing-y-1 text-sm">
-                  <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-                    <tr>
-                      <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
-                        Row details
-                      </th>
-                      <th
-                        colSpan={4}
-                        title="Each % box resizes one text line — only on that row's shirt"
-                        className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80"
-                      >
-                        Line size % — this design
-                      </th>
-                      <th colSpan={2} className="px-3 pb-1 pt-1"></th>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <th className="px-3 pb-2">#</th>
-                      <th className="px-3 pb-2">Name on shirt</th>
-                      <th className="px-3 pb-2">Number</th>
-                      <th className="px-3 pb-2">Phone</th>
-                      <th className="px-3 pb-2">Shirt size</th>
-                      <th className="px-3 pb-2" title="Overall text size for this row (100 = default)">
-                        Text size
-                      </th>
-                      <th className="px-3 pb-2" title="Name line size for this row only">
-                        Name
-                      </th>
-                      <th className="px-3 pb-2" title="Number line size for this row only">
-                        Number
-                      </th>
-                      <th className="px-3 pb-2" title="Phone line size for this row only">
-                        Phone
-                      </th>
-                      <th className="px-3 pb-2" title="Shirt-size line size for this row only">
-                        Size
-                      </th>
-                      <th className="px-3 pb-2">Qty</th>
-                      <th className="px-3 pb-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r, i) => (
-                      <tr
-                        key={r.id}
-                        onClick={() => setActiveId(r.id)}
-                        className={`cursor-pointer odd:bg-secondary/20 ${
-                          r.id === active?.id
-                            ? "bg-secondary ring-1 ring-inset ring-primary/60"
-                            : "hover:bg-secondary/60"
-                        }`}
-                      >
-                        <td className="px-2 text-muted-foreground">{i + 1}</td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            value={r.name}
-                            placeholder="Name"
-                            className="min-w-[170px]"
-                            onChange={(e) => update(r.id, { name: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            value={r.number}
-                            placeholder="10"
-                            className="w-20"
-                            onChange={(e) => update(r.id, { number: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Input
-                            value={r.phone}
-                            placeholder="Phone"
-                            className="w-32"
-                            onChange={(e) => update(r.id, { phone: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
-                            <SelectTrigger className="w-[150px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {chart.map((s) => (
-                                <SelectItem key={s.size} value={s.size}>
-                                  {s.size} — {s.w}×{s.h}"
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              variant="secondary"
-                              size="icon"
-                              className="size-7"
-                              onClick={() =>
-                                update(r.id, { textScale: Math.max(20, (r.textScale ?? textScale) - 5) })
-                              }
-                            >
-                              <Minus className="size-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              min={20}
-                              max={300}
-                              value={r.textScale ?? textScale}
-                              className="h-8 w-16"
-                              onChange={(e) =>
-                                update(r.id, {
-                                  textScale: Math.min(
-                                    300,
-                                    Math.max(20, Number(e.target.value) || (r.textScale ?? textScale)),
-                                  ),
-                                })
-                              }
-                            />
-                            <Button
-                              variant="secondary"
-                              size="icon"
-                              className="size-7"
-                              onClick={() =>
-                                update(r.id, { textScale: Math.min(300, (r.textScale ?? textScale) + 5) })
-                              }
-                            >
-                              <Plus className="size-3" />
-                            </Button>
-                          </div>
-                        </td>
-                        {(["name", "number", "phone", "size"] as LayerKey[]).map((k) => (
-                          <td key={k} className="px-3 py-1.5" onClick={(e) => e.stopPropagation()}>
-                            <Input
-                              type="number"
-                              min={20}
-                              max={300}
-                              title={`${LAYER_LABELS[k]} size for this design`}
-                              value={r.layerScales?.[k] ?? 100}
-                              className="h-8 w-16"
-                              onChange={(e) =>
-                                update(r.id, {
-                                  layerScales: {
-                                    ...r.layerScales,
-                                    [k]: Math.min(300, Math.max(20, Number(e.target.value) || 100)),
-                                  },
-                                })
-                              }
-                            />
-                          </td>
-                        ))}
-                        <td className="px-3 py-1.5">
-                          <Input
-                            type="number"
-                            min={1}
-                            value={r.qty}
-                            className="w-16"
-                            onChange={(e) =>
-                              update(r.id, { qty: Math.max(1, Number(e.target.value) || 1) })
-                            }
-                          />
-                        </td>
-                        <td className="px-3 py-1.5">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeRow(r.id);
-                            }}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4 grid gap-2">
-                <Label htmlFor="bulk">Paste a list</Label>
-                <Textarea
-                  id="bulk"
-                  rows={3}
-                  value={bulk}
-                  onChange={(e) => setBulk(e.target.value)}
-                  placeholder={"Alex Carter, 10, 9876543210, (L)40, 1\nPriya Nair, 7, , (M)38, 2"}
-                />
-                <Button variant="secondary" onClick={importBulk} className="justify-self-start">
-                  Replace roster with list
-                </Button>
-              </div>
-            </CollapsibleSection>
-
             <CollapsibleSection
               open={openSections["clipart"] ?? true}
               onToggle={() => toggleSection("clipart")}
