@@ -188,21 +188,23 @@ function CollapsibleSection({
 }) {
   return (
     <section className="panel overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-secondary/50"
-      >
-        {icon}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">{title}</span>
-          {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
-        </span>
-        {actions}
-        <ChevronDown
-          className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
-        />
-      </button>
+      <div className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary/50">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex min-w-0 flex-1 items-center gap-2 py-0.5 text-left"
+        >
+          {icon}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold">{title}</span>
+            {subtitle && <span className="block truncate text-xs text-muted-foreground">{subtitle}</span>}
+          </span>
+          <ChevronDown
+            className={`size-4 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+          />
+        </button>
+        {actions && <div className="shrink-0">{actions}</div>}
+      </div>
       {open && <div className="border-t border-border/70 p-3">{children}</div>}
     </section>
   );
