@@ -16,6 +16,9 @@ import {
   LogIn,
   LogOut,
   Minus,
+  Palette,
+  PanelBottomClose,
+  PanelBottomOpen,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
@@ -218,6 +221,7 @@ export function Index() {
   const [showGrid, setShowGrid] = useState(true);
   const [showLeft, setShowLeft] = useState(true);
   const [showRight, setShowRight] = useState(true);
+  const [showBottom, setShowBottom] = useState(true);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const toggleSection = (key: string) =>
     setOpenSections((s) => ({ ...s, [key]: !(s[key] ?? true) }));
@@ -758,6 +762,14 @@ export function Index() {
             >
               {showRight ? <PanelRightClose className="size-4" /> : <PanelRightOpen className="size-4" />}
             </Button>
+            <Button
+              variant={showBottom ? "secondary" : "ghost"}
+              size="icon"
+              title={showBottom ? "Hide the Excel and roster strip" : "Show the Excel and roster strip"}
+              onClick={() => setShowBottom((v) => !v)}
+            >
+              {showBottom ? <PanelBottomClose className="size-4" /> : <PanelBottomOpen className="size-4" />}
+            </Button>
             <div className="flex items-center gap-2 rounded-md border border-input bg-secondary px-3 py-1.5">
               <Label htmlFor="dpi" className="text-xs text-muted-foreground">
                 DPI
@@ -792,7 +804,8 @@ export function Index() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 px-3 py-3 sm:px-4 lg:min-h-0 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 px-3 py-3 sm:px-4 lg:min-h-0">
+        <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         {/* LEFT: functions */}
         {showLeft && (
           <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[360px] xl:w-[410px] lg:overflow-y-auto lg:pr-0.5">
