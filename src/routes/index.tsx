@@ -810,7 +810,7 @@ export function Index() {
         <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         {/* LEFT: functions */}
         {showLeft && (
-          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[360px] xl:w-[410px] lg:overflow-y-auto lg:pr-0.5">
+          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[280px] xl:w-[320px] lg:overflow-y-auto lg:pr-0.5">
             <CollapsibleSection
               open={openSections["clipart"] ?? true}
               onToggle={() => toggleSection("clipart")}
@@ -1010,7 +1010,7 @@ export function Index() {
             {img ? (
               <canvas
                 ref={previewRef}
-                className="max-h-[60vh] max-w-full rounded-md border border-border bg-secondary lg:max-h-full"
+                className="max-h-[62vh] max-w-full rounded-md border border-border bg-secondary lg:max-h-full"
               />
             ) : (
               <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/80 bg-secondary/40 px-6 py-16 text-center">
@@ -1026,7 +1026,7 @@ export function Index() {
 
         {/* RIGHT: text design */}
         {showRight && (
-          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[350px] xl:w-[380px] lg:overflow-y-auto lg:pl-0.5">
+          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[270px] xl:w-[300px] lg:overflow-y-auto lg:pl-0.5">
             <div className="panel p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-semibold">Text design</span>
@@ -1411,7 +1411,7 @@ export function Index() {
         </div>
 
         {showBottom && (
-          <div className="grid shrink-0 gap-3 lg:max-h-[46vh] lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] lg:overflow-y-auto lg:pr-1">
+          <div className="grid shrink-0 gap-3 lg:max-h-[30vh] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:overflow-y-auto lg:pr-1">
             <CollapsibleSection
               open={openSections["excel"] ?? true}
               onToggle={() => toggleSection("excel")}
