@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useCallback, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ErrorInfo, type ReactNode } from "react";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import {
@@ -211,7 +211,7 @@ function InlineChoice({
 }: {
   value?: string;
   onChange: (value: string) => void;
-  options: { value: string; label: string; style?: React.CSSProperties }[];
+  options: { value: string; label: string; style?: CSSProperties }[];
   layout?: "grid" | "list" | "row";
 }) {
   const containerClass =
