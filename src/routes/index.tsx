@@ -35,13 +35,6 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import {
@@ -207,6 +200,44 @@ function CollapsibleSection({
       </div>
       {open && <div className="border-t border-border/70 p-3">{children}</div>}
     </section>
+  );
+}
+
+function InlineChoice({
+  value,
+  onChange,
+  options,
+  layout = "grid",
+}: {
+  value?: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string; style?: React.CSSProperties }[];
+  layout?: "grid" | "list" | "row";
+}) {
+  const containerClass =
+    layout === "list"
+      ? "grid max-h-36 gap-1 overflow-y-auto overscroll-contain pr-1"
+      : layout === "row"
+        ? "flex flex-wrap gap-1"
+        : "grid grid-cols-2 gap-1";
+
+  return (
+    <div className={containerClass} role="group">
+      {options.map((option) => (
+        <Button
+          key={option.value}
+          type="button"
+          size="sm"
+          variant={value === option.value ? "default" : "secondary"}
+          aria-pressed={value === option.value}
+          className={`min-w-0 ${layout === "list" ? "w-full justify-start" : ""}`}
+          style={option.style}
+          onClick={() => onChange(option.value)}
+        >
+          <span className="truncate">{option.label}</span>
+        </Button>
+      ))}
+    </div>
   );
 }
 
@@ -1064,34 +1095,30 @@ export function Index() {
 
                 <div className="grid gap-2">
                   <Label>Preset</Label>
-                  <Select onValueChange={(v) => patch(TEXT_PRESETS[Number(v)]!.patch)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Apply a look…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TEXT_PRESETS.map((p, i) => (
-                        <SelectItem key={p.label} value={String(i)}>
-                          {p.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <InlineChoice
+                    options={TEXT_PRESETS.map((preset, index) => ({
+                      value: String(index),
+                      label: preset.label,
+                    }))}
+                    onChange={(value) => {
+                      const preset = TEXT_PRESETS[Number(value)];
+                      if (preset) patch(preset.patch);
+                    }}
+                  />
                 </div>
 
                 <div className="grid gap-2">
                   <Label>Font</Label>
-                  <Select value={L.fontFamily} onValueChange={(v) => patch({ fontFamily: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-72">
-                      {fonts.map((f) => (
-                        <SelectItem key={f.value} value={f.value}>
-                          <span style={{ fontFamily: f.value }}>{f.label}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <InlineChoice
+                    layout="list"
+                    value={L.fontFamily}
+                    options={fonts.map((font) => ({
+                      value: font.value,
+                      label: font.label,
+                      style: { fontFamily: font.value },
+                    }))}
+                    onChange={(value) => patch({ fontFamily: value })}
+                  />
                   <label>
                     <input
                       type="file"
@@ -1264,19 +1291,15 @@ export function Index() {
                   </div>
                   <div className="grid gap-2 pt-1">
                     <Label>Text direction</Label>
-                    <Select
+                    <InlineChoice
                       value={L.direction}
-                      onValueChange={(v) => patch({ direction: v as TextDirection })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="horizontal">Horizontal →</SelectItem>
-                        <SelectItem value="vertical-up">Vertical ↑</SelectItem>
-                        <SelectItem value="vertical-down">Vertical ↓</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      options={[
+                        { value: "horizontal", label: "Horizontal →" },
+                        { value: "vertical-up", label: "Vertical ↑" },
+                        { value: "vertical-down", label: "Vertical ↓" },
+                      ]}
+                      onChange={(value) => patch({ direction: value as TextDirection })}
+                    />
                     <p className="text-xs text-muted-foreground">
                       Applies only to the selected text layer. Position and manual rotation remain independent.
                     </p>
@@ -1312,18 +1335,14 @@ export function Index() {
               <div className="grid gap-4">
                 <div className="grid gap-2">
                   <Label>Fill</Label>
-                  <Select
+                  <InlineChoice
                     value={L.fill}
-                    onValueChange={(v) => patch({ fill: v as LayerStyle["fill"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="solid">Solid colour</SelectItem>
-                      <SelectItem value="gradient">Gradient</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: "solid", label: "Solid colour" },
+                      { value: "gradient", label: "Gradient" },
+                    ]}
+                    onChange={(value) => patch({ fill: value as LayerStyle["fill"] })}
+                  />
                   {L.fill === "solid" ? (
                     <Input
                       type="color"
@@ -1368,21 +1387,17 @@ export function Index() {
 
                 <div className="grid gap-2">
                   <Label>Effect</Label>
-                  <Select
+                  <InlineChoice
                     value={L.effect}
-                    onValueChange={(v) => patch({ effect: v as LayerStyle["effect"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      <SelectItem value="shadow">Drop shadow</SelectItem>
-                      <SelectItem value="glow">Neon glow</SelectItem>
-                      <SelectItem value="extrude">3D extrude</SelectItem>
-                      <SelectItem value="emboss">Emboss</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={[
+                      { value: "none", label: "None" },
+                      { value: "shadow", label: "Drop shadow" },
+                      { value: "glow", label: "Neon glow" },
+                      { value: "extrude", label: "3D extrude" },
+                      { value: "emboss", label: "Emboss" },
+                    ]}
+                    onChange={(value) => patch({ effect: value as LayerStyle["effect"] })}
+                  />
                   {L.effect !== "none" && (
                     <>
                       <Input
@@ -1578,18 +1593,18 @@ export function Index() {
                           />
                         </td>
                         <td className="px-3 py-1.5">
-                          <Select value={r.size} onValueChange={(v) => update(r.id, { size: v })}>
-                            <SelectTrigger className="w-[150px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
+                          <select
+                            value={r.size}
+                            aria-label={`Shirt size for ${r.name || `row ${i + 1}`}`}
+                            className="h-9 w-[150px] rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            onChange={(e) => update(r.id, { size: e.target.value })}
+                          >
                               {chart.map((s) => (
-                                <SelectItem key={s.size} value={s.size}>
+                                <option key={s.size} value={s.size}>
                                   {s.size} — {s.w}×{s.h}"
-                                </SelectItem>
+                                </option>
                               ))}
-                            </SelectContent>
-                          </Select>
+                          </select>
                         </td>
                         <td className="px-3 py-1.5">
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
