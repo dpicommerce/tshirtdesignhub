@@ -776,9 +776,11 @@ export function Index() {
 
       <header className="shrink-0 border-b border-border/70">
         <div className="mx-auto flex w-full max-w-[1800px] flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-card text-xs font-black tracking-widest">
-            JH
-          </div>
+          <img
+            src="/justhue-logo.jpeg"
+            alt="JustHue logo"
+            className="size-10 shrink-0 rounded-md bg-white object-contain"
+          />
           <div className="mr-auto">
             <h1 className="text-xl leading-none tracking-wide">JUSTHUE</h1>
             <p className="text-[11px] text-muted-foreground">
