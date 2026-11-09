@@ -255,7 +255,14 @@ export function Index() {
   const [showLeft, setShowLeft] = useState(true);
   const [showRight, setShowRight] = useState(true);
   const [showBottom, setShowBottom] = useState(true);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    clipart: true,
+    "text-basic": true,
+    "text-pos": true,
+    "text-style": true,
+    excel: true,
+    roster: true,
+  });
   const toggleSection = (key: string) =>
     setOpenSections((s) => ({ ...s, [key]: !(s[key] ?? false) }));
   const [fonts, setFonts] = useState<FontOption[]>(FONT_OPTIONS);
@@ -750,7 +757,7 @@ export function Index() {
 
   return (
     <main
-      className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden"
+      className="flex min-h-dvh flex-col md:h-dvh md:overflow-hidden"
       style={{ background: "var(--gradient-hero)" }}
     >
       <Toaster position="top-center" />
@@ -837,11 +844,11 @@ export function Index() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-3 px-3 py-3 sm:px-4 lg:min-h-0">
-        <div className="flex w-full min-h-0 flex-1 flex-col gap-3 lg:flex-row">
+      <div className="mx-auto flex w-full max-w-[1800px] flex-1 flex-col gap-2 px-3 py-2 sm:px-4 md:min-h-0">
+        <div className="flex w-full min-h-0 flex-1 flex-col gap-2 md:flex-row">
         {/* LEFT: functions */}
         {showLeft && (
-          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[280px] xl:w-[320px] lg:overflow-y-auto lg:pr-0.5">
+          <aside className="flex w-full shrink-0 flex-col gap-2 md:min-h-0 md:w-[190px] md:overflow-y-auto md:pr-0.5 xl:w-[260px]">
             <CollapsibleSection
               open={openSections["clipart"] ?? false}
               onToggle={() => toggleSection("clipart")}
@@ -977,7 +984,7 @@ export function Index() {
         )}
 
         {/* CENTER: the design */}
-        <section className="panel flex min-h-0 min-w-0 flex-1 flex-col p-3" ref={dropRef}>
+        <section className="panel flex min-h-[320px] min-w-0 flex-1 flex-col p-2 md:min-h-0 md:p-3" ref={dropRef}>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base">
               Preview{" "}
@@ -1041,7 +1048,7 @@ export function Index() {
             {img ? (
               <canvas
                 ref={previewRef}
-                className="max-h-[62vh] max-w-full rounded-md border border-border bg-secondary lg:max-h-full"
+                className="max-h-[62vh] max-w-full rounded-md border border-border bg-secondary md:max-h-full"
               />
             ) : (
               <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/80 bg-secondary/40 px-6 py-16 text-center">
@@ -1057,7 +1064,7 @@ export function Index() {
 
         {/* RIGHT: text design */}
         {showRight && (
-          <aside className="flex w-full shrink-0 flex-col gap-3 lg:min-h-0 lg:w-[270px] xl:w-[300px] lg:overflow-y-auto lg:pl-0.5">
+          <aside className="flex w-full shrink-0 flex-col gap-2 md:min-h-0 md:w-[220px] md:overflow-y-auto md:pl-0.5 xl:w-[280px]">
             <div className="panel p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-semibold">Text design</span>
@@ -1426,7 +1433,7 @@ export function Index() {
         </div>
 
         {showBottom && (
-          <div className="grid shrink-0 gap-3 lg:max-h-[30vh] lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:overflow-y-auto lg:pr-1">
+          <div className="grid shrink-0 gap-2 md:max-h-[24vh] md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:overflow-y-auto md:pr-1">
             <CollapsibleSection
               open={openSections["excel"] ?? false}
               onToggle={() => toggleSection("excel")}
