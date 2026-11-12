@@ -66,6 +66,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { PayToExport } from "@/components/PayToExport";
 import { CLIPART_LIBRARY } from "@/lib/clipart-library";
+import frontTemplate from "@/assets/front-template.jpeg.asset.json";
+import backTemplate from "@/assets/back-template.jpeg.asset.json";
 
 class AppErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   override state = { error: null as Error | null };
@@ -162,6 +164,8 @@ const starterRows: PersonRow[] = [
   { id: uid(), name: "SPORTS", phone: "VOLLEY BALL", number: "", size: "42", qty: 1 },
 ];
 
+type ShirtSide = "front" | "back";
+
 function CollapsibleSection({
   open,
   onToggle,
@@ -242,8 +246,12 @@ function InlineChoice({
 }
 
 export function Index() {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
-  const [img, setImg] = useState<HTMLImageElement | null>(null);
+  const [images, setImages] = useState<Record<ShirtSide, HTMLImageElement | null>>({ front: null, back: null });
+  const [imageSources, setImageSources] = useState<Record<ShirtSide, string>>({
+    front: frontTemplate.url,
+    back: backTemplate.url,
+  });
+  const [activeSide, setActiveSide] = useState<ShirtSide>("front");
   const [rows, setRows] = useState<PersonRow[]>(starterRows);
   const [activeId, setActiveId] = useState<string>(starterRows[0]!.id);
   const [style, setStyle] = useState<DesignStyle>(defaultStyle);
@@ -282,6 +290,28 @@ export function Index() {
   const [fontsReady, setFontsReady] = useState(false);
   const previewRef = useRef<HTMLCanvasElement>(null);
   const dropRef = useRef<HTMLDivElement>(null);
+  const img = images[activeSide];
+  const imgSrc = imageSources[activeSide];
+
+  useEffect(() => {
+    let alive = true;
+    const loadTemplate = async (src: string) => {
+      const image = new Image();
+      image.src = src;
+      await image.decode();
+      return image;
+    };
+    Promise.all([loadTemplate(frontTemplate.url), loadTemplate(backTemplate.url)])
+      .then(([front, back]) => {
+        if (alive) setImages({ front, back });
+      })
+      .catch(() => {
+        if (alive) toast.error("The default front and back images could not be loaded.");
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const active = useMemo(() => rows.find((r) => r.id === activeId) ?? rows[0]!, [rows, activeId]);
   const L = style[layer];
@@ -362,15 +392,15 @@ export function Index() {
       const image = new Image();
       image.src = dataUrl;
       await image.decode();
-      setImg(image);
-      setImgSrc(dataUrl);
+      setImages((current) => ({ ...current, [activeSide]: image }));
+      setImageSources((current) => ({ ...current, [activeSide]: dataUrl }));
       toast.success(
         `Artwork loaded — ${image.naturalWidth}×${image.naturalHeight}px, treated as ${BASE_SIZE.w}×${BASE_SIZE.h}" at ${BASE_DPI} DPI`,
       );
     } catch {
       toast.error("That image could not be read.");
     }
-  }, []);
+  }, [activeSide]);
 
   const loadClipArt = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -655,11 +685,13 @@ export function Index() {
     }
   };
 
-  const renderBlob = async (row: PersonRow): Promise<Blob> => {
+  const renderBlob = async (row: PersonRow, side: ShirtSide = activeSide): Promise<Blob> => {
+    const background = images[side];
+    if (!background) throw new Error(`The ${side} image is not ready yet.`);
     const spec = findSize(chart, row.size);
     const px = sheetPixels(spec, dpi);
     const c = document.createElement("canvas");
-    renderShirt(c, img!, row, style, px.w, px.h, (row.textScale ?? textScale) / 100, clipArts);
+    renderShirt(c, background, row, style, px.w, px.h, (row.textScale ?? textScale) / 100, clipArts);
     const raw = await new Promise<Blob>((res) => c.toBlob((b) => res(b!), "image/png", 1));
     return await pngWithDpi(raw, px.dpi);
   };
@@ -683,7 +715,7 @@ export function Index() {
     if (!img || !active) return;
     setBusy(true);
     try {
-      download(await renderBlob(active), `${exportDateTime()}-${slug(active.name || active.number || "tshirt")}-${slug(active.size)}.png`);
+      download(await renderBlob(active), `${exportDateTime()}-${slug(active.name || active.number || "tshirt")}-${activeSide}-${slug(active.size)}.png`);
     } finally {
       setBusy(false);
     }
@@ -706,7 +738,7 @@ export function Index() {
         const blob = await renderBlob(r);
         const folder = zip.folder(`${slug(r.size)}-${spec.w}x${spec.h}in`) ?? zip;
         folder.file(
-          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.number)}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
+          `${String(i + 1).padStart(2, "0")}-${slug(r.name || r.number)}-${activeSide}-${spec.w}x${spec.h}in-${px.dpi}dpi${r.qty > 1 ? `-x${r.qty}` : ""}.png`,
           blob,
         );
       }
@@ -995,6 +1027,21 @@ export function Index() {
               </span>
             </h2>
             <div className="flex gap-1.5">
+              <div role="group" aria-label="Design side" className="flex items-center gap-1">
+                {(["front", "back"] as ShirtSide[]).map((side) => (
+                  <Button
+                    key={side}
+                    type="button"
+                    size="sm"
+                    variant={activeSide === side ? "default" : "secondary"}
+                    aria-pressed={activeSide === side}
+                    className="h-8 px-2.5 capitalize"
+                    onClick={() => setActiveSide(side)}
+                  >
+                    {side}
+                  </Button>
+                ))}
+              </div>
               <Button
                 variant="secondary"
                 size="icon"
@@ -1036,7 +1083,7 @@ export function Index() {
                 />
                 <span className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-md border border-input bg-secondary px-3 text-sm font-medium hover:bg-muted">
                   <ImagePlus className="size-4" />
-                  {imgSrc ? "Replace design" : "Upload design"}
+                  {imgSrc ? `Replace ${activeSide}` : `Upload ${activeSide}`}
                 </span>
               </label>
               <Button variant="secondary" size="sm" onClick={() => requestExport("one")} disabled={!img || busy}>
@@ -1055,7 +1102,7 @@ export function Index() {
             ) : (
               <div className="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed border-border/80 bg-secondary/40 px-6 py-16 text-center">
                 <ImagePlus className="size-8 text-primary" />
-                <p className="font-medium">Drop your t-shirt design here</p>
+                <p className="font-medium">Loading {activeSide} design…</p>
                 <p className="text-sm text-muted-foreground">
                   Artwork is resized to the complete selected size at {BASE_DPI} DPI — no zoom and no cropping.
                 </p>
@@ -1435,7 +1482,7 @@ export function Index() {
         </div>
 
         {showBottom && (
-          <div className="grid shrink-0 gap-2 md:max-h-[24vh] md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:overflow-y-auto md:pr-1">
+          <div className="grid shrink-0 gap-2 md:max-h-[36vh] md:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] md:overflow-y-auto md:overscroll-contain md:pr-1">
             <CollapsibleSection
               open={openSections["excel"] ?? false}
               onToggle={() => toggleSection("excel")}
@@ -1524,9 +1571,12 @@ export function Index() {
                 that row's shirt only.
               </p>
 
-              <div className="overflow-x-auto">
+              <div
+                aria-label="Scrollable roster list"
+                className="max-h-[28vh] overflow-auto overscroll-contain rounded-md border border-border md:max-h-60"
+              >
                 <table className="w-full min-w-[1420px] border-separate border-spacing-y-1 text-sm">
-                  <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <thead className="sticky top-0 z-10 bg-card text-left text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th colSpan={6} className="px-3 pb-1 pt-1 text-[11px] font-semibold text-foreground/80">
                         Row details
